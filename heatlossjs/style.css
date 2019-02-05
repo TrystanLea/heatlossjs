@@ -1,0 +1,91 @@
+table {
+  width:100%;
+  border-collapse: collapse;
+  background-color:#fcfcfc;
+}
+
+#heatloss table {
+  text-align:left;
+  border: 1px solid #ccc;
+  padding:5px;
+}
+
+#heatloss th {
+  text-align:left;
+  border: 1px solid #ccc;
+  padding:5px;
+}
+
+#heatloss td {
+  text-align:left;
+  border: 1px solid #ccc;
+  padding:5px;
+}
+
+input {
+  border:none;
+  width:70%;
+  font-size:16px;
+  padding-right:4px;
+  background-color:#fcfcfc;
+}
+
+select {
+  border:none;
+  width:100%;
+  font-size:14px;
+  color:#666;
+  padding-right:4px;
+  background-color:#fcfcfc;
+  /* for Firefox */
+  -moz-appearance: none;
+  /* for Chrome */
+  -webkit-appearance: none;
+  cursor:pointer;
+}
+
+input[prop=width] { width:70%; }
+input[prop=height] { width:70%; }
+
+.unit {
+  font-size:75%;
+  color:#44b3e2;
+}
+
+.value {
+  display:inline-block;
+  width:40px;
+  text-align:center;
+}
+
+.section, .room {
+  border-top:1px solid #ccc;
+  border-left:1px solid #ccc;
+  border-right:1px solid #ccc;
+  text-align:left;
+}
+
+.section-heading, .room-heading {
+  background-color:#eee;
+  padding:10px;
+  text-align:left;
+  cursor:pointer;
+}
+
+.room-elements {
+  background-color:#eee;
+  padding:0px 10px 10px 10px;
+}
+
+.room-elements-table {
+
+}
+
+.icon {
+  cursor:pointer;
+  width:11px;
+  padding:2px;
+}
+
+.center { text-align:center; }
+.add-element { cursor:pointer; }
