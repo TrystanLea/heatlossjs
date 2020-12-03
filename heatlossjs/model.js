@@ -159,12 +159,44 @@ heatloss.calculate = function() {
 // --------------------------------------------------------------------------------------------
 heatloss.events = function() {
 
-    $(this.element).on('change',".element-types",function(){
+    // ------------------------------------------------------
+    // Element types
+    // ------------------------------------------------------
+
+    $(this.element).on('click',".add-element-type",function(){
+
+        var last = false;
+        var index = 0;
+        for (var name in config.element_type) {
+            last = config.element_type[name]
+            index++
+        }
+
+        if (last!=false) {
+            config.element_type["Element "+index] = last
+        } else {
+            config.element_type["Element "+index] = {uvalue:0}
+        }
+        heatloss.calculate();
+    });
+
+    $(this.element).on('change',".element-type-name",function(){
+        //var name = $(this).attr("name");
+        //var value = $(this).val();
+        //config.element_type[name].uvalue = value;
+        //heatloss.calculate();
+    });
+    
+    $(this.element).on('change',".element-type-uvalue",function(){
         var name = $(this).attr("name");
         var value = $(this).val();
         config.element_type[name].uvalue = value;
         heatloss.calculate();
     });
+
+    // ------------------------------------------------------
+    // Misc
+    // ------------------------------------------------------
     
     $(this.element).on('change',".boundaries",function(){
         var boundary = $(this).attr("boundary");
@@ -185,38 +217,15 @@ heatloss.events = function() {
         config.rooms[room][property] = value
         heatloss.calculate()
     });
-
-    $(this.element).on('change',".element",function(){
-        var tr = $(this).parent().parent();
-        var room = tr.attr("room");
-        var elementIndex = tr.attr("element");
-        var property = $(this).attr("prop");
-        var value = $(this).val();
-        
-        if (property=="width" || property=="height") value = value * 1;
-        if (property=="boundary") value = value.toLowerCase();
-        
-        config.rooms[room].elements[elementIndex][property] = value;
-        
-        heatloss.calculate();
-    });
-
-    $(this.element).on('change',".radiator",function(){
-        var tr = $(this).parent().parent();
-        var room = tr.attr("room");
-        var radiatorIndex = tr.attr("radiatorIndex");
-        var property = $(this).attr("prop");
-        var value = $(this).val();
-        
-        config.rooms[room].radiators[radiatorIndex][property] = value;
-        
-        heatloss.calculate();
-    });
-
+    
     $(this.element).on('click',".room-heading",function(){
        var roomName = $(this).attr("name");
        $(".room-elements[name='"+roomName+"']").slideToggle(); 
     });
+
+    // ------------------------------------------------------
+    // Element
+    // ------------------------------------------------------
 
     $(this.element).on('click',".add-element",function(){
         var roomName = $(this).attr("room");
@@ -241,6 +250,59 @@ heatloss.events = function() {
        var elementIndex = tr.attr("element");
        config.rooms[room].elements.splice(elementIndex,1)
        heatloss.calculate();
+    });
+
+    $(this.element).on('change',".element",function(){
+        var tr = $(this).parent().parent();
+        var room = tr.attr("room");
+        var elementIndex = tr.attr("element");
+        var property = $(this).attr("prop");
+        var value = $(this).val();
+        
+        if (property=="width" || property=="height") value = value * 1;
+        if (property=="boundary") value = value.toLowerCase();
+        
+        config.rooms[room].elements[elementIndex][property] = value;
+        
+        heatloss.calculate();
+    });
+
+    // ------------------------------------------------------
+    // Radiators
+    // ------------------------------------------------------
+
+    $(this.element).on('click',".add-radiator",function(){
+        var roomName = $(this).attr("room");
+        var length = config.rooms[roomName].radiators.length;
+
+        if (length>0) {
+            var last = config.rooms[roomName].radiators[length-1]
+            config.rooms[roomName].radiators.push(last)
+        } else {
+            config.rooms[roomName].radiators.push({
+                name:"Double Panel Convector 1200x600"
+            });
+        }
+        heatloss.calculate();
+    });
+    $(this.element).on('click',".delete-radiator",function(){
+       var tr = $(this).parent().parent();
+       var room = tr.attr("room");
+       var radiatorIndex = tr.attr("radiatorIndex");
+       config.rooms[room].radiators.splice(radiatorIndex,1)
+       heatloss.calculate();
+    });
+    
+    $(this.element).on('change',".radiator",function(){
+        var tr = $(this).parent().parent();
+        var room = tr.attr("room");
+        var radiatorIndex = tr.attr("radiatorIndex");
+        var property = $(this).attr("prop");
+        var value = $(this).val();
+        
+        config.rooms[room].radiators[radiatorIndex][property] = value;
+        
+        heatloss.calculate();
     });
 }
 

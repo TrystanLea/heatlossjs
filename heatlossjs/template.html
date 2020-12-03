@@ -7,10 +7,16 @@
           <tr><th>Element Name</th><th>U-value</th></tr>
           {{#each element_type as | element |}}
           <tr>
-            <td>{{@key}}</td>
-            <td style="width: 120px;"><input class="element-types" style="width: 60%;" name="{{@key}}" type="text" value="{{ element.uvalue }}" /><span class="unit">W/K.m2</span></td>
+            <td><input class="element-type-name" name="{{@key}}" type="text" value="{{@key}}" /></td>
+            <td style="width: 120px;"><input class="element-type-uvalue" style="width: 60%;" name="{{@key}}" type="text" value="{{ element.uvalue }}" /><span class="unit">W/K.m2</span></td>
           </tr>
           {{/each}}
+          <tr>
+            <td>
+              <div class="add-element-type" room="{{@key}}" style="cursor:pointer"><img src="heatlossjs/glyphicons-191-plus-sign.png" class="icon" />Add New</div>
+            </td>
+            <td></td>
+          </tr>
         </table>
       </div>
       <div style="width: 50%; float: right;">
@@ -145,7 +151,7 @@
       <b>Radiators</b>
       <table class="room-radiators-table">
         {{#each room.radiators as | radiator |}}
-        <tr room="{{@../key}}" radiatorindex="{{@index}}">
+        <tr room="{{@../key}}" radiatorIndex="{{@index}}">
           <td>
             <select class="radiator" prop="name">
             {{#each ../../radiators}}
@@ -157,10 +163,11 @@
             <div class="value">{{toFixed heat 0}}</div>
             <span class="unit">W</span>
           </td>
+          <td class="center" style="width:20px"><img src="heatlossjs/glyphicons-17-bin.png" class="icon delete-radiator" /></td>
         </tr>
         {{/each}}
         <tr>
-          <td></td>
+          <td><div class="add-radiator" room="{{@key}}" style="cursor:pointer"><img src="heatlossjs/glyphicons-191-plus-sign.png" class="icon" />Add New</div></td>
           <td style="background-color: {{#ifmorethan room.total_radiator_output room.heat}} #aee3a4 {{else}} #e3a4a4 {{/ifmorethan}}">{{toFixed room.total_radiator_output 0}}W</td>
         </tr>
       </table>
