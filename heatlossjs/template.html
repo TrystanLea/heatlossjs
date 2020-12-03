@@ -1,0 +1,181 @@
+<div id="heatloss">
+  <div class="section">
+    <div class="section-heading"><b>Element Types</b></div>
+    <div class="room-elements">
+      <div style="width: 49%; float: left;">
+        <table>
+          <tr><th>Element Name</th><th>U-value</th></tr>
+          {{#each element_type as | element |}}
+          <tr>
+            <td>{{@key}}</td>
+            <td style="width: 120px;"><input class="element-types" style="width: 60%;" name="{{@key}}" type="text" value="{{ element.uvalue }}" /><span class="unit">W/K.m2</span></td>
+          </tr>
+          {{/each}}
+        </table>
+      </div>
+      <div style="width: 50%; float: right;">
+        <table style="margin-bottom: 5px;">
+          <tr><th>Boundary</th><th>Temperature</th></tr>
+          {{#each T}}
+          <tr>
+            <td>{{@key}}</td>
+            <td style="width: 120px;"><input class="boundaries" style="width: 60%;" boundary="{{@key}}" type="text" value="{{this}}" /><span class="unit">C</span></td>
+          </tr>
+          {{/each}}
+        </table>
+      </div>
+      <div style="width: 50%; float: right;">
+        <table>
+          <tr><th>Other</th><th>Value</th></tr>
+          <tr>
+            <td>Radiator Mean Water Temperature (MWT)</td>
+            <td style="width: 120px;"><input class="MWT" style="width: 60%;" type="text" value="{{heating_MWT}}" /><span class="unit">C</span></td>
+          </tr>
+        </table>
+      </div>
+      <div style="clear: both;"></div>
+    </div>
+  </div>
+  {{#each rooms as | room |}}
+  <div class="room">
+    <div class="room-heading" name="{{@key}}">
+      <b><b>Room: {{@key}}</b> {{toFixed room.heat 0}}W {{toFixed room.kwh 0}} kWh</b>
+    </div>
+    <div class="room-elements" name="{{@key}}">
+      <table style="margin-bottom: 5px;">
+        <tr>
+          <td>Room set point:</td>
+          <td><input class="room-input" room="{{@key}}" prop="temperature" type="text" value="{{room.temperature}}" /></td>
+          <td>Air changes per hour:</td>
+          <td><input class="room-input" room="{{@key}}" prop="air_change_an_hour" type="text" value="{{room.air_change_an_hour}}" /></td>
+        </tr>
+      </table>
+      <table style="margin-bottom: 5px;">
+        <tr>
+          <td>Room</td>
+          <td style="text-align: right;">Width:</td>
+          <td style="width: 65px;"><input class="room-input" type="text" room="{{@key}}" prop="width" value="{{room.width}}" /><span class="unit">m</span></td>
+          <td style="text-align: right;">Length:</td>
+          <td style="width: 65px;"><input class="room-input" type="text" room="{{@key}}" prop="length" value="{{room.length}}" /><span class="unit">m</span></td>
+          <td style="text-align: right;">Height:</td>
+          <td style="width: 65px;"><input class="room-input" type="text" room="{{@key}}" prop="height" value="{{room.height}}" /><span class="unit">m</span></td>
+          <td style="text-align: right;">Area:</td>
+          <td style="width: 65px;"><input class="room-input" type="text" room="{{@key}}" prop="area" value="{{room.area}}" /><span class="unit">m2</span></td>
+          <td style="text-align: right;">Volume:</td>
+          <td><div class="value">{{toFixed room.volume 1}}</div><span class="unit">m3</span></td>
+          <td style="text-align: right;"><b>Heat loss:</b></td>
+          <td>
+            <div class="value">{{toFixed room.infiltration_heat 0}}</div>
+            <span class="unit">W</span>
+          </td>
+        </tr>
+      </table>
+      <table class="room-elements-table" style="margin-bottom: 5px;">
+        <tr>
+          <th>ID</th>
+          <th width="200px">Type</th>
+          <th>Boundary</th>
+          <th></th>
+          <th width="100px">Orientation</th>
+          <th width="50px">Width</th>
+          <th width="50px">Height</th>
+          <th>Area</th>
+          <th>U-value</th>
+          <th>Heat loss</th>
+        </tr>
+        {{#each room.elements as | element |}}
+        <tr room="{{@../key}}" element="{{@index}}">
+          <td>{{@index}}</td>
+          <td>
+            <select class="element" prop="type">
+            {{#each ../../element_type}}
+            <option {{#ifeq element.type @key}} selected {{/ifeq}}>{{@key}}</option>
+            {{/each}}
+            </select>
+          </td>
+          <td>
+            <select class="element" prop="boundary">
+            {{#each ../../T}}
+            <option {{#ifeq element.boundary @key}} selected {{/ifeq}}>{{toUpperCase @key}}</option>
+            {{/each}}
+            {{#each ../../rooms}}
+            <option {{#ifeq element.boundary @key}} selected {{/ifeq}}>{{toUpperCase @key}}</option>
+            {{/each}}
+            </select>
+          </td>
+          <td>
+            <select class="element" prop="subtractfrom">
+              <option></option>
+              {{#each room.elements }}
+              <option {{#ifeq element.subtractfrom @index}} selected {{/ifeq}}>{{@index}}</option>
+              {{/each}}
+            </select>
+          </td>
+          <td><input class="element" prop="orientation" type="text" value="{{element.orientation}}" /></td>
+          <td><input class="element" prop="width" type="text" value="{{element.width}}" /><span class="unit">m</span></td>
+          <td><input class="element" prop="height" type="text" value="{{element.height}}" /><span class="unit">m</span></td>
+          <td>
+            <div class="value">{{toFixed element.A 1}}</div>
+            <span class="unit">m2</span>
+          </td>
+          <td>
+            <div class="value">{{element.uvalue}}</div>
+          </td>
+          <td>
+            <div class="value">{{toFixed element.heat 0}}</div>
+            <span class="unit">W</span>
+          </td>
+          <td class="center"><img src="heatlossjs/glyphicons-17-bin.png" class="icon delete-element" /></td>
+        </tr>
+        {{/each}}
+        <tr>
+          <td></td>
+          <td>
+            <div class="add-element" room="{{@key}}"><img src="heatlossjs/glyphicons-191-plus-sign.png" class="icon" />Add Element</div>
+          </td>
+        </tr>
+      </table>
+      <table style="margin-bottom: 5px;">
+        <tr>
+          <td>Total room heat loss:</td>
+          <td style="width: 120px;">{{toFixed room.heat 0}}W</td>
+        </tr>
+      </table>
+      <br />
+      <b>Radiators</b>
+      <table class="room-radiators-table">
+        {{#each room.radiators as | radiator |}}
+        <tr room="{{@../key}}" radiatorindex="{{@index}}">
+          <td>
+            <select class="radiator" prop="name">
+            {{#each ../../radiators}}
+            <option value="{{@key}}" {{#ifeq radiator.name @key}} selected {{/ifeq}}>{{@key}} ({{heat50k}}W @50K) £{{incvat}}</option>
+            {{/each}}
+            </select>
+          </td>
+          <td style="width: 120px;">
+            <div class="value">{{toFixed heat 0}}</div>
+            <span class="unit">W</span>
+          </td>
+        </tr>
+        {{/each}}
+        <tr>
+          <td></td>
+          <td style="background-color: {{#ifmorethan room.total_radiator_output room.heat}} #aee3a4 {{else}} #e3a4a4 {{/ifmorethan}}">{{toFixed room.total_radiator_output 0}}W</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+  {{/each}}
+  <div class="section">
+    <div class="section-heading"><b><b>House Totals</b></b></div>
+    <div class="room-elements">
+      <table>
+        <tr><td>Annual space heating demand:</td><td><div class="value">{{toFixed house.kwh 0}}</div><span class="unit">kWh</span></td></tr>
+        <tr><td>Maximum heat requirement:</td><td><div class="value">{{toFixed house.heatloss 0}}</div><span class="unit">W</span></td></tr>
+        <tr><td>Total radiator output</td><td><div class="value">{{toFixed house.radiator_output 0}}</div><span class="unit">W</span></td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
