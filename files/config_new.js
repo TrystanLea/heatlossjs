@@ -9,14 +9,11 @@ var config_new = {
   },
 
   element_type: {
-    "Ground Floor": { uvalue:0.7 },
-    "Insulated Roof": { uvalue:0.6 },
-    "Stone Wall 0.85m": { uvalue:1.1 },
-    "Stone Wall 0.65m": { uvalue:1.3 },
-    "Timber Frame Wall": { uvalue:0.6 },
-    "Secondary Glazing": { uvalue:2.8 },
-    "Double Glazing": { uvalue:1.6 },
-    "Door": { uvalue:2.8 }
+    "Floor": { uvalue:0.6 },
+    "Roof": { uvalue:0.15 },
+    "Wall": { uvalue:0.3 },
+    "Window": { uvalue:1.6 },
+    "Door": { uvalue:1.6 }
   },
   
   rooms: {

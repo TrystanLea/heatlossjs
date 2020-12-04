@@ -275,7 +275,7 @@ heatloss.events = function() {
             config.rooms[roomName].elements.push(JSON.parse(JSON.stringify(last)))
         } else {
             config.rooms[roomName].elements.push({
-                type:"Wall:External", 
+                type:Object.keys(config.element_type)[0],
                 orientation:"", 
                 width:0.0, height:0.0
             });
