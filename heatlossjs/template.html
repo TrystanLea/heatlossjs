@@ -1,5 +1,14 @@
 <div id="heatloss">
   <div class="section">
+    <div class="section-heading">
+      <b>HeatLoss.js</b>
+      <button class="btn save">Save</button>
+      <button class="btn open" onclick="document.getElementById('open').click()">Open</button>
+      <input type="file" id="open" style="display:none" accept="application/json"/>
+      <button class="btn new">New</button>
+    </div>
+  </div>
+  <div class="section">
     <div class="section-heading"><b>Element Types</b></div>
     <div class="room-elements">
       <div style="width: 49%; float: left;">
@@ -36,6 +45,14 @@
           <tr>
             <td>Radiator Mean Water Temperature (MWT)</td>
             <td style="width: 120px;"><input class="MWT" style="width: 60%;" type="text" value="{{heating_MWT}}" /><span class="unit">C</span></td>
+          </tr>
+          <tr>
+            <td>Heating demand degree days</td>
+            <td style="width: 120px;"><input class="degreedays" style="width: 60%;" type="text" value="{{degreedays}}" /><span class="unit"></span></td>
+          </tr>
+          <tr>
+            <td>Apply global air changes per hour:</td>
+            <td style="width: 120px;"><input class="global_ach" style="width: 60%;" type="text" value="{{global_ach}}" /><span class="unit"></span></td>
           </tr>
         </table>
       </div>
@@ -85,7 +102,7 @@
           <th width="100px">Orientation</th>
           <th width="50px">Width</th>
           <th width="50px">Height</th>
-          <th>Area</th>
+          <th width="60px">Area</th>
           <th>U-value</th>
           <th>Heat loss</th>
         </tr>
@@ -120,10 +137,7 @@
           <td><input class="element" prop="orientation" type="text" value="{{element.orientation}}" /></td>
           <td><input class="element" prop="width" type="text" value="{{element.width}}" /><span class="unit">m</span></td>
           <td><input class="element" prop="height" type="text" value="{{element.height}}" /><span class="unit">m</span></td>
-          <td>
-            <div class="value">{{toFixed element.A 1}}</div>
-            <span class="unit">m2</span>
-          </td>
+          <td><input class="element" prop="area" type="text" value="{{toFixed element.A 1}}" /><span class="unit">m2</span></td>
           <td>
             <div class="value">{{element.uvalue}}</div>
           </td>

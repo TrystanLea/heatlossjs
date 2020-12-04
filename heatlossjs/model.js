@@ -173,7 +173,7 @@ heatloss.events = function() {
         }
 
         if (last!=false) {
-            config.element_type["Element "+index] = last
+            config.element_type["Element "+index] = JSON.parse(JSON.stringify(last))
         } else {
             config.element_type["Element "+index] = {uvalue:0}
         }
@@ -181,10 +181,22 @@ heatloss.events = function() {
     });
 
     $(this.element).on('change',".element-type-name",function(){
-        //var name = $(this).attr("name");
-        //var value = $(this).val();
-        //config.element_type[name].uvalue = value;
-        //heatloss.calculate();
+        var old_name = $(this).attr("name");
+        var new_name = $(this).val();
+        // Create new element with new name
+        config.element_type[new_name] = config.element_type[old_name]
+        // Update all elements with new name
+        for (var roomName in config.rooms) {
+            for (var elementIndex in config.rooms[roomName].elements) {
+                if (config.rooms[roomName].elements[elementIndex].type==old_name) {
+                    config.rooms[roomName].elements[elementIndex].type = new_name
+                }
+            }
+        }
+        // Delete old element
+        delete config.element_type[old_name]
+        
+        heatloss.calculate();
     });
     
     $(this.element).on('change',".element-type-uvalue",function(){
@@ -207,6 +219,11 @@ heatloss.events = function() {
     
     $(this.element).on('change',".MWT",function(){
         config.heating_MWT = $(this).val();
+        heatloss.calculate();
+    });
+
+    $(this.element).on('change',".degreedays",function(){
+        config.degreedays = $(this).val();
         heatloss.calculate();
     });
 
@@ -233,7 +250,7 @@ heatloss.events = function() {
 
         if (length>0) {
             var last = config.rooms[roomName].elements[length-1]
-            config.rooms[roomName].elements.push(last)
+            config.rooms[roomName].elements.push(JSON.parse(JSON.stringify(last)))
         } else {
             config.rooms[roomName].elements.push({
                 type:"Wall:External", 
@@ -259,10 +276,18 @@ heatloss.events = function() {
         var property = $(this).attr("prop");
         var value = $(this).val();
         
-        if (property=="width" || property=="height") value = value * 1;
-        if (property=="boundary") value = value.toLowerCase();
+        if (property=="width" || property=="height") {
+            value = value * 1;
+            delete config.rooms[room].elements[elementIndex].area
+        }
+        else if (property=="area") {
+            value = value * 1;
+        }
+        else if (property=="boundary") value = value.toLowerCase();
         
         config.rooms[room].elements[elementIndex][property] = value;
+        
+        console.log(room+" "+elementIndex+" "+property)
         
         heatloss.calculate();
     });
@@ -304,6 +329,48 @@ heatloss.events = function() {
         
         heatloss.calculate();
     });
+    
+    $(this.element).on('click',".save",function(){
+        download_data("heatlossjs.json",JSON.stringify(config, null, 2))
+    });
+    
+    $(this.element).on('change',"#open",function(e){
+        open_file(e)
+    });
+    
+    $(this.element).on('click',".new",function(e){
+        config = JSON.parse(JSON.stringify(config_new))
+        heatloss.calculate();
+    });
+}
+
+function open_file(e) {
+  var file = e.target.files[0];
+  if (!file) {
+    return;
+  }
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var contents = JSON.parse(e.target.result);
+    if (contents!=null) config = contents
+    heatloss.calculate();
+  };
+  reader.readAsText(file);
+}
+
+function download_data(filename, data) {
+    var blob = new Blob([data], {type: 'application/json'});
+    if(window.navigator.msSaveOrOpenBlob) {
+        window.navigator.msSaveBlob(blob, filename);
+    }
+    else{
+        var elem = window.document.createElement('a');
+        elem.href = window.URL.createObjectURL(blob);
+        elem.download = filename;        
+        document.body.appendChild(elem);
+        elem.click();        
+        document.body.removeChild(elem);
+    }
 }
 
 function ucFirst(string) {

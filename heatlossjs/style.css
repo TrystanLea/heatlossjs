@@ -89,3 +89,12 @@ input[prop=height] { width:70%; }
 
 .center { text-align:center; }
 .add-element { cursor:pointer; }
+
+.btn {
+  float:right;
+  margin-top:-6px;
+}
+
+.hide {
+  display:none;
+}
