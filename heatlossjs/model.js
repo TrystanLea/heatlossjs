@@ -14,10 +14,12 @@ var heatloss = {
 heatloss.init = function(element) {
     this.element = element
     this.events()
+    
+    config.path = this.path
         
     // Load template
     $.ajax({
-      url: 'heatlossjs/template.html',
+      url: this.path+'/template.html',
       cache: true,
       success: function(data) {
         source = data;

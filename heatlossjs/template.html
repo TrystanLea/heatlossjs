@@ -22,7 +22,7 @@
           {{/each}}
           <tr>
             <td>
-              <div class="add-element-type" room="{{@key}}" style="cursor:pointer"><img src="heatlossjs/glyphicons-191-plus-sign.png" class="icon" />Add New</div>
+              <div class="add-element-type" room="{{@key}}" style="cursor:pointer"><img src="{{path}}/glyphicons-191-plus-sign.png" class="icon" />Add New</div>
             </td>
             <td></td>
           </tr>
@@ -147,13 +147,13 @@
             <div class="value">{{toFixed element.heat 0}}</div>
             <span class="unit">W</span>
           </td>
-          <td class="center"><img src="heatlossjs/glyphicons-17-bin.png" class="icon delete-element" /></td>
+          <td class="center"><img src="{{../../path}}/glyphicons-17-bin.png" class="icon delete-element" /></td>
         </tr>
         {{/each}}
         <tr>
           <td></td>
           <td>
-            <div class="add-element" room="{{@key}}"><img src="heatlossjs/glyphicons-191-plus-sign.png" class="icon" />Add Element</div>
+            <div class="add-element" room="{{@key}}"><img src="{{../path}}/glyphicons-191-plus-sign.png" class="icon" />Add Element</div>
           </td>
         </tr>
       </table>
@@ -179,11 +179,11 @@
             <div class="value">{{toFixed heat 0}}</div>
             <span class="unit">W</span>
           </td>
-          <td class="center" style="width:20px"><img src="heatlossjs/glyphicons-17-bin.png" class="icon delete-radiator" /></td>
+          <td class="center" style="width:20px"><img src="{{../../path}}/glyphicons-17-bin.png" class="icon delete-radiator" /></td>
         </tr>
         {{/each}}
         <tr>
-          <td><div class="add-radiator" room="{{@key}}" style="cursor:pointer"><img src="heatlossjs/glyphicons-191-plus-sign.png" class="icon" />Add New</div></td>
+          <td><div class="add-radiator" room="{{@key}}" style="cursor:pointer"><img src="{{../path}}/glyphicons-191-plus-sign.png" class="icon" />Add New</div></td>
           <td style="background-color: {{#ifmorethan room.total_radiator_output room.heat}} #aee3a4 {{else}} #e3a4a4 {{/ifmorethan}}">{{toFixed room.total_radiator_output 0}}W</td>
         </tr>
       </table>
@@ -191,7 +191,7 @@
   </div>
   {{/each}}
   <div class="section">
-    <div class="section-heading"><b class="add-new-room"><img src="heatlossjs/glyphicons-191-plus-sign.png" class="icon" /> Add new room</b></div>
+    <div class="section-heading"><b class="add-new-room"><img src="{{path}}/glyphicons-191-plus-sign.png" class="icon" /> Add new room</b></div>
   </div>
   <div class="section">
     <div class="section-heading"><b><b>House Totals</b></b></div>
