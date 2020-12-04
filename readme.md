@@ -2,6 +2,8 @@
 
 A small open source room by room heat loss calculator
 
+![heatlossjs.png](heatlossjs.png)
+
 Create html page, load heatloss.js tool with the following:
 
     <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
