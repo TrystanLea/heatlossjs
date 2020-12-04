@@ -227,11 +227,33 @@ heatloss.events = function() {
         heatloss.calculate();
     });
 
+    // ------------------------------------------------------
+    // Rooms
+    // ------------------------------------------------------
+
+    $(this.element).on('click',".add-new-room",function(){
+        var n=0; for (var z in config.rooms) n++;
+        config.rooms["Room "+n] = {
+          temperature: 20.0, area: 0.0, height: 0.0, air_change_an_hour: 1.0,
+          elements: [],
+          radiators: []
+        }
+        heatloss.calculate()
+    });
+
     $(this.element).on('change',".room-input",function(){
         var room = $(this).attr("room");
         var property = $(this).attr("prop")
         var value = $(this).val() * 1
         config.rooms[room][property] = value
+        heatloss.calculate()
+    });
+    
+    $(this.element).on('change',".room-name",function(){
+        var old_room_name = $(this).attr("room");
+        var new_room_name = $(this).val()
+        config.rooms[new_room_name] = JSON.parse(JSON.stringify(config.rooms[old_room_name]))
+        delete config.rooms[old_room_name]
         heatloss.calculate()
     });
     

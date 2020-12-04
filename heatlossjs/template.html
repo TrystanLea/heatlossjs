@@ -67,10 +67,12 @@
     <div class="room-elements" name="{{@key}}">
       <table style="margin-bottom: 5px;">
         <tr>
-          <td>Room set point:</td>
-          <td><input class="room-input" room="{{@key}}" prop="temperature" type="text" value="{{room.temperature}}" /></td>
+          <td>Name:</td>
+          <td><input class="room-name" room="{{@key}}" type="text" value="{{@key}}" /></td>
+          <td>Set point:</td>
+          <td><input class="room-input" room="{{@key}}" prop="temperature" type="text" value="{{room.temperature}}" style="width:65px" /></td>
           <td>Air changes per hour:</td>
-          <td><input class="room-input" room="{{@key}}" prop="air_change_an_hour" type="text" value="{{room.air_change_an_hour}}" /></td>
+          <td><input class="room-input" room="{{@key}}" prop="air_change_an_hour" type="text" value="{{room.air_change_an_hour}}" style="width:65px" /></td>
         </tr>
       </table>
       <table style="margin-bottom: 5px;">
@@ -188,6 +190,9 @@
     </div>
   </div>
   {{/each}}
+  <div class="section">
+    <div class="section-heading"><b class="add-new-room"><img src="heatlossjs/glyphicons-191-plus-sign.png" class="icon" /> Add new room</b></div>
+  </div>
   <div class="section">
     <div class="section-heading"><b><b>House Totals</b></b></div>
     <div class="room-elements">

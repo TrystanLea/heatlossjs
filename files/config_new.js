@@ -20,11 +20,11 @@ var config_new = {
   },
   
   rooms: {
-   "New Bothy":{
-      temperature: 18.0,
-      area: 20.5, 
-      height: 2.7,
-      air_change_an_hour: 1.5,
+   "Livingroom":{
+      temperature: 20.0,
+      area: 0.0, 
+      height: 0.0,
+      air_change_an_hour: 1.0,
       
       elements: [
       ],
