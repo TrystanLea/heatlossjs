@@ -33,6 +33,8 @@ heatloss.init = function(element) {
 // Calculation
 // --------------------------------------------------------------------------------------------
 heatloss.calculate = function() {
+    config.path = this.path
+
     var air_change_factor = 0.33
 
     config.house = {
