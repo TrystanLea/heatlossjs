@@ -1,5 +1,5 @@
 var config = {
-  degreedays: 2228,
+  degreedays: 1800,
   heating_MWT: 40.0,
   
   T: {
