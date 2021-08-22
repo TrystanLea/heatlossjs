@@ -309,11 +309,10 @@ heatloss.events = function() {
         else if (property=="area") {
             value = value * 1;
         }
-        else if (property=="boundary") value = value.toLowerCase();
         
         config.rooms[room].elements[elementIndex][property] = value;
         
-        console.log(room+" "+elementIndex+" "+property)
+        // console.log(room+" "+elementIndex+" "+property+" "+value)
         
         heatloss.calculate();
     });

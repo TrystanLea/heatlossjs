@@ -121,10 +121,10 @@
           <td>
             <select class="element" prop="boundary">
             {{#each ../../T}}
-            <option {{#ifeq element.boundary @key}} selected {{/ifeq}}>{{toUpperCase @key}}</option>
+            <option {{#ifeq element.boundary @key}} selected {{/ifeq}} value="{{@key}}">{{toUpperCase @key}}</option>
             {{/each}}
             {{#each ../../rooms}}
-            <option {{#ifeq element.boundary @key}} selected {{/ifeq}}>{{toUpperCase @key}}</option>
+            <option {{#ifeq element.boundary @key}} selected {{/ifeq}} value="{{@key}}">{{toUpperCase @key}}</option>
             {{/each}}
             </select>
           </td>
