@@ -40,7 +40,7 @@
         </table>
       </div>
       <div style="width: 50%; float: right;">
-        <table>
+        <table style="margin-bottom: 5px;">
           <tr><th>Other</th><th>Value</th></tr>
           <tr>
             <td>Radiator Mean Water Temperature (MWT)</td>
@@ -54,6 +54,23 @@
             <td>Apply global air changes per hour:</td>
             <td style="width: 120px;"><input class="global_ach" style="width: 60%;" type="text" value="{{global_ach}}" /><span class="unit"></span></td>
           </tr>-->
+        </table>
+      </div>
+      <div style="width: 50%; float: right;">
+        <table>
+          <tr><th>Heat pump</th><th>Value</th></tr>
+          <tr>
+            <td>Flow rate (L/min)</td>
+            <td style="width: 120px;"><input class="heatpump_flow_rate" style="width: 60%;" type="text" value="{{heatpump_flow_rate}}" /><span class="unit">L/min</span></td>
+          </tr>
+          <tr>
+            <td>Flow temperature</td>
+            <td>{{toFixed heatpump_flow_temperature 1}}<span class="unit">C</span></td>
+          </tr>
+          <tr>
+            <td>COP</td>
+            <td>{{toFixed heatpump_COP 1}}</td>
+          </tr>
         </table>
       </div>
       <div style="clear: both;"></div>

@@ -182,6 +182,12 @@ heatloss.calculate = function() {
         config.house.kwh += room.kwh
         config.house.total_heat_output += room.total_heat_output
     }
+    
+    // Heat pump model
+    var heatpump_deltaT = config.house.total_heat_output / ((config.heatpump_flow_rate / 60)*4150)
+    config.heatpump_flow_temperature = config.heating_MWT + 0.5*heatpump_deltaT;
+    config.heatpump_COP = 0.49 * (config.heatpump_flow_temperature+4+273) / ((config.heatpump_flow_temperature+4+273)-(config.T.external-6+273));
+    
     $(this.element).html(this.template(config));
 }
 
@@ -249,12 +255,17 @@ heatloss.events = function() {
     });
     
     $(this.element).on('change',".MWT",function(){
-        config.heating_MWT = $(this).val();
+        config.heating_MWT = $(this).val()*1;
         heatloss.calculate();
     });
 
     $(this.element).on('change',".degreedays",function(){
-        config.degreedays = $(this).val();
+        config.degreedays = $(this).val()*1;
+        heatloss.calculate();
+    });
+    
+    $(this.element).on('change',".heatpump_flow_rate",function(){
+        config.heatpump_flow_rate = $(this).val()*1;
         heatloss.calculate();
     });
 
