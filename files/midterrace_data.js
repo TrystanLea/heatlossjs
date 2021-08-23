@@ -1,7 +1,8 @@
 var config = {
   degreedays: 1800,
   heating_MWT: 40.0,
-  
+  heatpump_flow_rate: 9.0,
+    
   T: {
     external: -3.0,
     ground: 10.0,
