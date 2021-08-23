@@ -40,7 +40,7 @@ heatloss.calculate = function() {
     config.house = {
         heatloss: 0,
         kwh: 0,
-        radiator_output: 0
+        total_heat_output: 0
     };
     
     for (var z in config.rooms) {
@@ -108,14 +108,13 @@ heatloss.calculate = function() {
         // ----------------------------------------------------------------------------------------
         // Ventilation and infiltration
         // ----------------------------------------------------------------------------------------
-        if (room.area!=undefined) {
-            room.volume = room.area * room.height
-            room.width = 0
-            room.length = 0
-            
-        } else {
-            room.volume = room.width * room.length * room.height
+        if (room.area==undefined) room.area = 0;
+        
+        if (room.width>0 && room.length>0) {
+            room.area = room.width * room.length
         }
+        room.volume = room.area * room.height
+        
         var deltaT = room.temperature - config.T.external
         
         var infiltration_wk = room.air_change_an_hour * air_change_factor * room.volume
@@ -136,24 +135,52 @@ heatloss.calculate = function() {
         if (room.radiators==undefined) room.radiators = [];
         
         for (var i in room.radiators) {
-           var r = room.radiators[i]
+           var rad = room.radiators[i]
            
-           if (config.radiators[r.name].model==undefined) config.radiators[r.name].model="pow"
+           if (rad.model==undefined) rad.model="pow"
+           if (rad.heat50k==undefined) rad.heat50k = 1000
            
-           if (config.radiators[r.name].model=="pow") {
+           if (rad.model=="pow") {
                var dT = config.heating_MWT - room.temperature
-               r.heat50k = config.radiators[r.name].heat50k
-               r.heat = config.radiators[r.name].heat50k * Math.pow((dT / 50),1.3)
-           } else if (config.radiators[r.name].model=="linear") {
-               r.heat = config.radiators[r.name].m * config.heating_MWT + config.radiators[r.name].c
+               rad.heat = rad.heat50k * Math.pow((dT / 50),1.3)
+           } else if (rad.model=="linear") {
+               rad.heat = rad.m * config.heating_MWT + rad.c
            }
            
-           room.total_radiator_output += r.heat
+           room.total_radiator_output += rad.heat
         }
+        
+        // ----------------------------------------------------------------------------------------
+        // Under floor heating
+        // ----------------------------------------------------------------------------------------
+        room.total_ufh_output = 0;
+        
+        if (room.ufh==undefined) room.ufh = [];
+        
+        for (var i in room.ufh) {
+           var ufh = room.ufh[i]
+           
+           if (ufh.flooring==undefined) ufh.flooring = 0
+           
+           var dT = config.heating_MWT - room.temperature
+
+           // parameters determined using curve fitting of MCS heat pump calculator data
+           var m = 86.7*Math.pow(ufh.flooring,2) - 31.543*ufh.flooring + 5.74385;
+           var c = 424.7*Math.pow(ufh.flooring,2) - 156.403*ufh.flooring + 28.70185;
+           
+           var heat_m2 = (m * dT) - c;
+           if (heat_m2<0) heat_m2 = 0;
+           
+           ufh.heat = heat_m2 * ufh.area;
+
+           room.total_ufh_output += ufh.heat
+        }
+        
+        room.total_heat_output = room.total_radiator_output + room.total_ufh_output
         
         config.house.heatloss += room.heat
         config.house.kwh += room.kwh
-        config.house.radiator_output += room.total_radiator_output;
+        config.house.total_heat_output += room.total_heat_output
     }
     $(this.element).html(this.template(config));
 }
@@ -330,7 +357,8 @@ heatloss.events = function() {
             config.rooms[roomName].radiators.push(last)
         } else {
             config.rooms[roomName].radiators.push({
-                name:"Double Panel Convector 1200x600"
+                name:"Double Panel Convector 1200x600",
+                heat50k:2146
             });
         }
         heatloss.calculate();
@@ -351,6 +379,46 @@ heatloss.events = function() {
         var value = $(this).val();
         
         config.rooms[room].radiators[radiatorIndex][property] = value;
+        
+        heatloss.calculate();
+    });
+    
+    // ------------------------------------------------------
+    // Radiators
+    // ------------------------------------------------------
+
+    $(this.element).on('click',".add-ufh",function(){
+        var roomName = $(this).attr("room");
+        var length = config.rooms[roomName].ufh.length;
+
+        if (length>0) {
+            var last = config.rooms[roomName].ufh[length-1]
+            config.rooms[roomName].ufh.push(last)
+        } else {
+            config.rooms[roomName].ufh.push({
+                name:"16mm diameter, 150mm spacing",
+                area:config.rooms[roomName].area,
+                flooring:0.00
+            });
+        }
+        heatloss.calculate();
+    });
+    $(this.element).on('click',".delete-ufh",function(){
+       var tr = $(this).parent().parent();
+       var room = tr.attr("room");
+       var ufhIndex = tr.attr("ufhIndex");
+       config.rooms[room].ufh.splice(ufhIndex,1)
+       heatloss.calculate();
+    });
+    
+    $(this.element).on('change',".ufh",function(){
+        var tr = $(this).parent().parent();
+        var room = tr.attr("room");
+        var ufhIndex = tr.attr("ufhIndex");
+        var property = $(this).attr("prop");
+        var value = $(this).val();
+        
+        config.rooms[room].ufh[ufhIndex][property] = value;
         
         heatloss.calculate();
     });
