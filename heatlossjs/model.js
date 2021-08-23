@@ -19,7 +19,7 @@ heatloss.init = function(element) {
         
     // Load template
     $.ajax({
-      url: this.path+'/template.html',
+      url: this.path+'/template.html?v=3',
       cache: true,
       success: function(data) {
         source = data;
