@@ -163,28 +163,64 @@
           <td style="width: 120px;">{{toFixed room.heat 0}}W</td>
         </tr>
       </table>
-      <br />
-      <b>Radiators</b>
+      <div style="margin-top:10px; margin-bottom:5px">      
+        <b>Radiators <div class="add-radiator" room="{{@key}}" style="cursor:pointer; float:right"><img src="{{../path}}/glyphicons-191-plus-sign.png" class="icon" />Add</div></b>
+      </div>
       <table class="room-radiators-table">
         {{#each room.radiators as | radiator |}}
         <tr room="{{@../key}}" radiatorIndex="{{@index}}">
           <td>
-            <select class="radiator" prop="name">
-            {{#each ../../radiators}}
-            <option value="{{@key}}" {{#ifeq radiator.name @key}} selected {{/ifeq}}>{{@key}} ({{heat50k}}W @50K) £{{incvat}}</option>
-            {{/each}}
-            </select>
+            <input type="text" value="{{radiator.name}}" style="width:400px" class="radiator" prop="name">
+          </td>
+          <td>
+            {{#ifeq radiator.model 'pow'}}
+            <input type="text" value="{{radiator.heat50k}}" style="width:50px" class="radiator" prop="heat50k">
+            <span class="unit">W @ 50k</span>
+            {{else}}
+            <i style="font-size:12px">Edit in JSON object</i>
+            {{/ifeq}}
           </td>
           <td style="width: 120px;">
             <div class="value">{{toFixed heat 0}}</div>
-            <span class="unit">W</span>
+            <span class="unit">W @ MWT</span>
           </td>
           <td class="center" style="width:20px"><img src="{{../../path}}/glyphicons-17-bin.png" class="icon delete-radiator" /></td>
         </tr>
         {{/each}}
+      </table>
+      <div style="margin-top:10px; margin-bottom:5px">
+        <b>Under floor heating <div class="add-ufh" room="{{@key}}" style="cursor:pointer; float:right"><img src="{{../path}}/glyphicons-191-plus-sign.png" class="icon" />Add</div></b>
+      </div>
+      <table class="room-ufh-table">
+        {{#each room.ufh as | ufh |}}
+        <tr room="{{@../key}}" ufhIndex="{{@index}}">
+          <td>
+            <select>
+              <option>16mm diameter, 150mm spacing</option>
+            </select>
+          </td>
+          <td>
+            Area: 
+            <input type="text" value="{{ufh.area}}" style="width:50px" class="ufh" prop="area">
+            <span class="unit">m2</span>
+          </td>
+          <td>
+            Floor covering: 
+            <input type="text" value="{{ufh.flooring}}" style="width:50px" class="ufh" prop="flooring">
+            <span class="unit">W/m2.K</span>
+          </td>
+          <td style="width: 120px;">
+            <div class="value">{{toFixed heat 0}}</div>
+            <span class="unit">W @ MWT</span>
+          </td>
+          <td class="center" style="width:20px"><img src="{{../../path}}/glyphicons-17-bin.png" class="icon delete-ufh" /></td>
+        </tr>
+        {{/each}}
+      </table>
+      <table style="margin-top:10px">
         <tr>
-          <td><div class="add-radiator" room="{{@key}}" style="cursor:pointer"><img src="{{../path}}/glyphicons-191-plus-sign.png" class="icon" />Add New</div></td>
-          <td style="background-color: {{#ifmorethan room.total_radiator_output room.heat}} #aee3a4 {{else}} #e3a4a4 {{/ifmorethan}}">{{toFixed room.total_radiator_output 0}}W</td>
+          <td>Combined radiator and UFH output</td>
+          <td style="background-color: {{#ifmorethan room.total_heat_output room.heat}} #aee3a4 {{else}} #e3a4a4 {{/ifmorethan}}">{{toFixed room.total_heat_output 0}}W</td>
         </tr>
       </table>
     </div>
@@ -199,7 +235,7 @@
       <table>
         <tr><td>Annual space heating demand:</td><td><div class="value">{{toFixed house.kwh 0}}</div><span class="unit">kWh</span></td></tr>
         <tr><td>Maximum heat requirement:</td><td><div class="value">{{toFixed house.heatloss 0}}</div><span class="unit">W</span></td></tr>
-        <tr><td>Total radiator output</td><td><div class="value">{{toFixed house.radiator_output 0}}</div><span class="unit">W</span></td></tr>
+        <tr><td>Total radiator & UFH output</td><td><div class="value">{{toFixed house.total_heat_output 0}}</div><span class="unit">W</span></td></tr>
       </table>
     </div>
   </div>
