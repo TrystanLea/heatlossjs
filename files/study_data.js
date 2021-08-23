@@ -105,23 +105,12 @@ var config = {
       ],
 
       radiators: [
-          {name:"Cast Iron 1200x600x160"},
-          {name:"Double Panel Convector 1200x600"},
-          {name:"Double Panel Convector 1200x600"},
-          {name:"Double Panel Convector 1200x500"},
-          {name:"Double Panel Convector 1200x500"}
+          {name:"Cast Iron 1200x600x160",heat50k:1500},
+          {name:"Double Panel Convector 1200x600",heat50k:2146},
+          {name:"Double Panel Convector 1200x600",heat50k:2146},
+          {name:"Double Panel Convector 1200x500",heat50k:1834},
+          {name:"Double Panel Convector 1200x500",heat50k:1834}
       ]
     }
-  },
-    
-  radiators:{
-      "Double Panel Convector 1200x500":{heat50k:1834, incvat:84},
-      "Double Panel Convector 1200x600":{heat50k:2146, incvat:69},
-
-      "Cast Iron 1200x600x160":{heat50k:1500},
-      
-      "Dimplex SmartRad SRX180 Fan:3, 300L/h":{model:"linear", m:102.34, c:-2104.10, incvat:334},
-      "Dimplex SmartRad SRX180 Fan:2, 300L/h":{model:"linear", m:69.49, c:-1413.75, incvat:334},
-      "Dimplex SmartRad SRX180 Fan:1, 300L/h":{model:"linear", m:42.05, c:-847.75, incvat:334}
   }
 };
