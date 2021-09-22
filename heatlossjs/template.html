@@ -2,27 +2,26 @@
   <div class="section">
     <div class="section-heading">
       <b>HeatLoss.js</b>
-      <button class="btn save">Save</button>
+      <button class="btn save" @click="file_save()">Save</button>
       <button class="btn open" onclick="document.getElementById('open').click()">Open</button>
-      <input type="file" id="open" style="display:none" accept="application/json"/>
-      <button class="btn new">New</button>
+      <input type="file" id="open" @change="file_open($event)" style="display:none" accept="application/json"/>
+      <button class="btn" @click="file_new()">New</button>
     </div>
   </div>
+  
   <div class="section">
     <div class="section-heading"><b>Element Types</b></div>
     <div class="room-elements">
       <div style="width: 49%; float: left;">
         <table>
           <tr><th>Element Name</th><th>U-value</th></tr>
-          {{#each element_type as | element |}}
-          <tr>
-            <td><input class="element-type-name" name="{{@key}}" type="text" value="{{@key}}" /></td>
-            <td style="width: 120px;"><input class="element-type-uvalue" style="width: 60%;" name="{{@key}}" type="text" value="{{ element.uvalue }}" /><span class="unit">W/K.m2</span></td>
+          <tr v-for="(element,element_name) in element_type">
+            <td><input type="text" v-bind:value="element_name" @change="change_element_type_name($event,element_name)" /></td>
+            <td style="width: 120px;"><input style="width:60%;" type="text" v-model.number="element.uvalue" @change="update" /><span class="unit">W/K.m2</span></td>
           </tr>
-          {{/each}}
           <tr>
             <td>
-              <div class="add-element-type" room="{{@key}}" style="cursor:pointer"><img src="{{path}}/glyphicons-191-plus-sign.png" class="icon" />Add New</div>
+              <div style="cursor:pointer" @click="add_element_type"><img src="heatlossjs/glyphicons-191-plus-sign.png" class="icon" />Add New</div>
             </td>
             <td></td>
           </tr>
@@ -31,12 +30,10 @@
       <div style="width: 50%; float: right;">
         <table style="margin-bottom: 5px;">
           <tr><th>Boundary</th><th>Temperature</th></tr>
-          {{#each T}}
-          <tr>
-            <td>{{@key}}</td>
-            <td style="width: 120px;"><input class="boundaries" style="width: 60%;" boundary="{{@key}}" type="text" value="{{this}}" /><span class="unit">C</span></td>
+          <tr v-for="(value,boundaryName) in T">
+            <td>{{boundaryName}}</td>
+            <td style="width: 120px;"><input style="width: 60%;" type="text" v-model.number="value" @change="update" /><span class="unit">C</span></td>
           </tr>
-          {{/each}}
         </table>
       </div>
       <div style="width: 50%; float: right;">
@@ -44,16 +41,12 @@
           <tr><th>Other</th><th>Value</th></tr>
           <tr>
             <td>Radiator Mean Water Temperature (MWT)</td>
-            <td style="width: 120px;"><input class="MWT" style="width: 60%;" type="text" value="{{heating_MWT}}" /><span class="unit">C</span></td>
+            <td style="width: 120px;"><input style="width: 60%;" type="text" v-model.number="heating_MWT" @change="update" /><span class="unit">C</span></td>
           </tr>
           <tr>
             <td>Heating demand degree days</td>
-            <td style="width: 120px;"><input class="degreedays" style="width: 60%;" type="text" value="{{degreedays}}" /><span class="unit"></span></td>
+            <td style="width: 120px;"><input style="width: 60%;" type="text" v-model.number="degreedays" @change="update" /><span class="unit"></span></td>
           </tr>
-          <!--<tr>
-            <td>Apply global air changes per hour:</td>
-            <td style="width: 120px;"><input class="global_ach" style="width: 60%;" type="text" value="{{global_ach}}" /><span class="unit"></span></td>
-          </tr>-->
         </table>
       </div>
       <div style="width: 50%; float: right;">
@@ -61,53 +54,54 @@
           <tr><th>Heat pump</th><th>Value</th></tr>
           <tr>
             <td>Flow rate (L/min)</td>
-            <td style="width: 120px;"><input class="heatpump_flow_rate" style="width: 60%;" type="text" value="{{heatpump_flow_rate}}" /><span class="unit">L/min</span></td>
+            <td style="width: 120px;"><input style="width: 60%;" type="text" v-model.number="heatpump_flow_rate" @change="update" /><span class="unit">L/min</span></td>
           </tr>
           <tr>
             <td>Flow temperature</td>
-            <td>{{toFixed heatpump_flow_temperature 1}}<span class="unit">C</span></td>
+            <td>{{ heatpump_flow_temperature | toFixed(1) }}<span class="unit">C</span></td>
           </tr>
           <tr>
             <td>COP</td>
-            <td>{{toFixed heatpump_COP 1}}</td>
+            <td>{{ heatpump_COP | toFixed(1) }}</td>
           </tr>
         </table>
       </div>
       <div style="clear: both;"></div>
     </div>
   </div>
-  {{#each rooms as | room |}}
-  <div class="room">
-    <div class="room-heading" name="{{@key}}">
-      <b><b>Room: {{@key}}</b> {{toFixed room.heat 0}}W {{toFixed room.kwh 0}} kWh</b>
+  
+  <div class="room" v-for="(room,roomName) in rooms">
+    <div class="room-heading" @click="toggleSection(roomName)">
+      <b><b>Room: {{ roomName }}</b> {{ room.heat | toFixed(0) }}W {{ room.kwh | toFixed(0) }} kWh</b>
     </div>
-    <div class="room-elements" name="{{@key}}">
+    <div class="room-elements" v-bind:name="roomName">  
+
       <table style="margin-bottom: 5px;">
         <tr>
           <td>Name:</td>
-          <td><input class="room-name" room="{{@key}}" type="text" value="{{@key}}" /></td>
+          <td><input type="text" v-bind:value="roomName" @change="change_room_name($event,roomName)" /></td>
           <td>Set point:</td>
-          <td><input class="room-input" room="{{@key}}" prop="temperature" type="text" value="{{room.temperature}}" style="width:65px" /></td>
+          <td><input type="text" v-model.number="room.temperature" @change="update" style="width:65px" /></td>
           <td>Air changes per hour:</td>
-          <td><input class="room-input" room="{{@key}}" prop="air_change_an_hour" type="text" value="{{room.air_change_an_hour}}" style="width:65px" /></td>
+          <td><input type="text" v-model.number="room.air_change_an_hour" @change="update" style="width:65px" /></td>
         </tr>
       </table>
       <table style="margin-bottom: 5px;">
         <tr>
           <td>Room</td>
           <td style="text-align: right;">Width:</td>
-          <td style="width: 65px;"><input class="room-input" type="text" room="{{@key}}" prop="width" value="{{room.width}}" /><span class="unit">m</span></td>
+          <td style="width: 65px;"><input type="text" v-model.number="room.width" @change="update" /><span class="unit">m</span></td>
           <td style="text-align: right;">Length:</td>
-          <td style="width: 65px;"><input class="room-input" type="text" room="{{@key}}" prop="length" value="{{room.length}}" /><span class="unit">m</span></td>
+          <td style="width: 65px;"><input type="text" v-model.number="room.length" @change="update" /><span class="unit">m</span></td>
           <td style="text-align: right;">Height:</td>
-          <td style="width: 65px;"><input class="room-input" type="text" room="{{@key}}" prop="height" value="{{room.height}}" /><span class="unit">m</span></td>
+          <td style="width: 65px;"><input type="text" v-model.number="room.height" @change="update" /><span class="unit">m</span></td>
           <td style="text-align: right;">Area:</td>
-          <td style="width: 65px;"><input class="room-input" type="text" room="{{@key}}" prop="area" value="{{room.area}}" /><span class="unit">m2</span></td>
+          <td style="width: 65px;"><input type="text" v-model.number="room.area" @change="update" /><span class="unit">m2</span></td>
           <td style="text-align: right;">Volume:</td>
-          <td><div class="value">{{toFixed room.volume 1}}</div><span class="unit">m3</span></td>
+          <td><div class="value">{{ room.volume | toFixed(1) }}</div><span class="unit">m3</span></td>
           <td style="text-align: right;"><b>Heat loss:</b></td>
           <td>
-            <div class="value">{{toFixed room.infiltration_heat 0}}</div>
+            <div class="value">{{ room.infiltration_heat | toFixed(0) }}</div>
             <span class="unit">W</span>
           </td>
         </tr>
@@ -125,92 +119,84 @@
           <th>U-value</th>
           <th>Heat loss</th>
         </tr>
-        {{#each room.elements as | element |}}
-        <tr room="{{@../key}}" element="{{@index}}">
-          <td>{{@index}}</td>
+        <tr v-for="(element,elementIndex) in room.elements">
+          <td>{{ elementIndex }}</td>
           <td>
-            <select class="element" prop="type">
-            {{#each ../../element_type}}
-            <option {{#ifeq element.type @key}} selected {{/ifeq}}>{{@key}}</option>
-            {{/each}}
+            <select v-model="element.type" @change="update">
+              <option v-for="(type,element_name) in element_type">{{ element_name }}</option>
             </select>
           </td>
           <td>
-            <select class="element" prop="boundary">
-            {{#each ../../T}}
-            <option {{#ifeq element.boundary @key}} selected {{/ifeq}} value="{{@key}}">{{toUpperCase @key}}</option>
-            {{/each}}
-            {{#each ../../rooms}}
-            <option {{#ifeq element.boundary @key}} selected {{/ifeq}} value="{{@key}}">{{toUpperCase @key}}</option>
-            {{/each}}
+            <select v-model="element.boundary" @change="update">
+              <option v-for="(value,key) in T" v-bind:value="key">{{ key | toUpperCase }}</option>
+              <option v-for="(value,key) in rooms" v-bind:value="key">{{ key | toUpperCase }}</option>
             </select>
           </td>
           <td>
-            <select class="element" prop="subtractfrom">
+            <select v-model="element.subtractfrom" @change="update">
               <option></option>
-              {{#each room.elements }}
-              <option {{#ifeq element.subtractfrom @index}} selected {{/ifeq}}>{{@index}}</option>
-              {{/each}}
+              <option v-for="(value,key) in room.elements">{{ key }}</option>
             </select>
           </td>
-          <td><input class="element" prop="orientation" type="text" value="{{element.orientation}}" /></td>
-          <td><input class="element" prop="width" type="text" value="{{element.width}}" /><span class="unit">m</span></td>
-          <td><input class="element" prop="height" type="text" value="{{element.height}}" /><span class="unit">m</span></td>
-          <td><input class="element" prop="area" type="text" value="{{toFixed element.A 1}}" /><span class="unit">m2</span></td>
+          <td><input type="text" v-model="element.orientation" @change="update" /></td>
+          <td><input type="text" v-model.number="element.width" @change="update" /><span class="unit">m</span></td>
+          <td><input type="text" v-model.number="element.height" @change="update" /><span class="unit">m</span></td>
+          <td><input type="text" v-bind:value="element.A | toFixed(1)" /><span class="unit">m2</span></td>
           <td>
-            <div class="value">{{element.uvalue}}</div>
+            <div class="value">{{ element.uvalue }}</div>
           </td>
           <td>
-            <div class="value">{{toFixed element.heat 0}}</div>
+            <div class="value">{{ element.heat | toFixed(0) }}</div>
             <span class="unit">W</span>
-          </td>
-          <td class="center"><img src="{{../../path}}/glyphicons-17-bin.png" class="icon delete-element" /></td>
+          </td>             
+          <td class="center" @click="delete_element(roomName,elementIndex)"><img src="heatlossjs/glyphicons-17-bin.png" class="icon delete-element" /></td>
+
         </tr>
-        {{/each}}
         <tr>
           <td></td>
           <td>
-            <div class="add-element" room="{{@key}}"><img src="{{../path}}/glyphicons-191-plus-sign.png" class="icon" />Add Element</div>
+            <div class="add-element" @click="add_element(roomName)"><img src="heatlossjs/glyphicons-191-plus-sign.png" class="icon" />Add Element</div>
           </td>
         </tr>
       </table>
+
       <table style="margin-bottom: 5px;">
         <tr>
           <td>Total room heat loss:</td>
-          <td style="width: 120px;">{{toFixed room.heat 0}}W</td>
+          <td style="width: 120px;">{{ room.heat | toFixed(0) }}W</td>
         </tr>
       </table>
+      
       <div style="margin-top:10px; margin-bottom:5px">      
-        <b>Radiators <div class="add-radiator" room="{{@key}}" style="cursor:pointer; float:right"><img src="{{../path}}/glyphicons-191-plus-sign.png" class="icon" />Add</div></b>
+        <b>Radiators <div class="add-radiator" style="cursor:pointer; float:right" @click="add_radiator(roomName)"><img src="heatlossjs/glyphicons-191-plus-sign.png" class="icon" />Add</div></b>
       </div>
+
       <table class="room-radiators-table">
-        {{#each room.radiators as | radiator |}}
-        <tr room="{{@../key}}" radiatorIndex="{{@index}}">
+        <tr v-for="(radiator,radiatorIndex) in room.radiators">
           <td>
-            <input type="text" value="{{radiator.name}}" style="width:400px" class="radiator" prop="name">
+            <input type="text" v-model="radiator.name" @change="update" style="width:400px">
           </td>
           <td>
-            {{#ifeq radiator.model 'pow'}}
-            <input type="text" value="{{radiator.heat50k}}" style="width:50px" class="radiator" prop="heat50k">
-            <span class="unit">W @ 50k</span>
-            {{else}}
-            <i style="font-size:12px">Edit in JSON object</i>
-            {{/ifeq}}
+            <div v-if="radiator.model=='pow'">
+              <input type="text" v-model.number="radiator.heat50k" @change="update"style="width:50px">
+              <span class="unit">W @ 50k</span>
+            </div>
+            <div v-else>              
+              <i style="font-size:12px">Edit in JSON object</i>
+            </div> 
           </td>
           <td style="width: 120px;">
-            <div class="value">{{toFixed heat 0}}</div>
+            <div class="value">{{ radiator.heat | toFixed(0) }}</div>
             <span class="unit">W @ MWT</span>
           </td>
-          <td class="center" style="width:20px"><img src="{{../../path}}/glyphicons-17-bin.png" class="icon delete-radiator" /></td>
+          <td class="center" style="width:20px" @click="delete_radiator(roomName,radiatorIndex)"><img src="heatlossjs/glyphicons-17-bin.png" class="icon delete-radiator" /></td>
         </tr>
-        {{/each}}
       </table>
       <div style="margin-top:10px; margin-bottom:5px">
-        <b>Under floor heating <div class="add-ufh" room="{{@key}}" style="cursor:pointer; float:right"><img src="{{../path}}/glyphicons-191-plus-sign.png" class="icon" />Add</div></b>
+        <b>Under floor heating <div class="add-ufh" style="cursor:pointer; float:right" @click="add_ufh(roomName)"><img src="heatlossjs/glyphicons-191-plus-sign.png" class="icon" />Add</div></b>
       </div>
       <table class="room-ufh-table">
-        {{#each room.ufh as | ufh |}}
-        <tr room="{{@../key}}" ufhIndex="{{@index}}">
+        <tr v-for="(ufh,ufhIndex) in room.ufh">
           <td>
             <select>
               <option>16mm diameter, 150mm spacing</option>
@@ -218,43 +204,41 @@
           </td>
           <td>
             Area: 
-            <input type="text" value="{{ufh.area}}" style="width:50px" class="ufh" prop="area">
+            <input type="text" v-model.number="ufh.area" @change="update" style="width:50px">
             <span class="unit">m2</span>
           </td>
           <td>
             Floor covering: 
-            <input type="text" value="{{ufh.flooring}}" style="width:50px" class="ufh" prop="flooring">
+            <input type="text" v-model.number="ufh.flooring" @change="update" style="width:50px">
             <span class="unit">W/m2.K</span>
           </td>
           <td style="width: 120px;">
-            <div class="value">{{toFixed heat 0}}</div>
+            <div class="value">{{ ufh.heat | toFixed(0) }}</div>
             <span class="unit">W @ MWT</span>
           </td>
-          <td class="center" style="width:20px"><img src="{{../../path}}/glyphicons-17-bin.png" class="icon delete-ufh" /></td>
+          <td class="center" style="width:20px" @click="delete_ufh(roomName,ufhIndex)"><img src="heatlossjs/glyphicons-17-bin.png" class="icon delete-ufh" /></td>
         </tr>
-        {{/each}}
       </table>
       <table style="margin-top:10px">
         <tr>
           <td>Combined radiator and UFH output</td>
-          <td style="background-color: {{#ifmorethan room.total_heat_output room.heat}} #aee3a4 {{else}} #e3a4a4 {{/ifmorethan}}">{{toFixed room.total_heat_output 0}}W</td>
+          <!-- {{#ifmorethan room.total_heat_output room.heat}} #aee3a4 {{else}} #e3a4a4 {{/ifmorethan}} -->
+          <td style="background-color:#aee3a4">{{ room.total_heat_output | toFixed(0) }}W</td>
         </tr>
       </table>
     </div>
   </div>
-  {{/each}}
   <div class="section">
-    <div class="section-heading"><b class="add-new-room"><img src="{{path}}/glyphicons-191-plus-sign.png" class="icon" /> Add new room</b></div>
+    <div class="section-heading"><b @click="add_new_room"><img src="heatlossjs/glyphicons-191-plus-sign.png" class="icon" /> Add new room</b></div>
   </div>
   <div class="section">
     <div class="section-heading"><b><b>House Totals</b></b></div>
     <div class="room-elements">
       <table>
-        <tr><td>Annual space heating demand:</td><td><div class="value">{{toFixed house.kwh 0}}</div><span class="unit">kWh</span></td></tr>
-        <tr><td>Maximum heat requirement:</td><td><div class="value">{{toFixed house.heatloss 0}}</div><span class="unit">W</span></td></tr>
-        <tr><td>Total radiator & UFH output</td><td><div class="value">{{toFixed house.total_heat_output 0}}</div><span class="unit">W</span></td></tr>
+        <tr><td>Annual space heating demand:</td><td><div class="value">{{ house.kwh | toFixed(0) }}</div><span class="unit">kWh</span></td></tr>
+        <tr><td>Maximum heat requirement:</td><td><div class="value">{{ house.heatloss | toFixed(0) }}</div><span class="unit">W</span></td></tr>
+        <tr><td>Total radiator & UFH output</td><td><div class="value">{{ house.total_heat_output | toFixed(0) }}</div><span class="unit">W</span></td></tr>
       </table>
     </div>
   </div>
 </div>
-

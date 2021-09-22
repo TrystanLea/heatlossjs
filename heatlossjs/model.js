@@ -1,38 +1,155 @@
-// --------------------------------------------------------------------------------------------
-// HeatLoss Model JS Library
-// Author: Trystan Lea
-// Licence: GPL
-// --------------------------------------------------------------------------------------------
-var heatloss = {
-    element: "",
-    path: "heatlossjs"
-}
+calculate();
 
-// --------------------------------------------------------------------------------------------
-// Init
-// --------------------------------------------------------------------------------------------
-heatloss.init = function(element) {
-    this.element = element
-    this.events()
+// Load template
+$.ajax({
+  url: 'heatlossjs/template.html?v=1',
+  cache: true,
+  async:false,
+  success: function(data) {
+    $("#heatloss").html(data);
+  }               
+});
+
+var app = new Vue({
+    el: '#heatloss',
+    data: config,
+    methods: {
+        update: function() {
+            calculate();
+        },
+        add_element_type: function() {
+            var last = false;
+            var index = 0;
+            for (var name in config.element_type) {
+                last = config.element_type[name]
+                index++
+            }
+            if (last!=false) {
+                config.element_type["Element "+index] = JSON.parse(JSON.stringify(last))
+            } else {
+                config.element_type["Element "+index] = {uvalue:0}
+            }
+            calculate();
+        },
+        change_element_type_name: function(e,old_name) {
+            var new_name = e.target.value;
+            // Create new element with new name
+            config.element_type[new_name] = config.element_type[old_name]
+            // Update all elements with new name
+            for (var roomName in config.rooms) {
+                for (var elementIndex in config.rooms[roomName].elements) {
+                    if (config.rooms[roomName].elements[elementIndex].type==old_name) {
+                        config.rooms[roomName].elements[elementIndex].type = new_name
+                    }
+                }
+            }
+            // Delete old element
+            delete config.element_type[old_name]
+            calculate();
+        },
+        add_new_room: function() {
+            var n=0; for (var z in config.rooms) n++;
+            config.rooms["Room "+n] = {
+                temperature: 20.0, area: 0.0, height: 0.0, air_change_an_hour: 1.0,
+                elements: [],
+                radiators: []
+            }
+            calculate(); 
+        },
+        change_room_name: function(e,old_room_name) {
+            var new_room_name = e.target.value;
+            config.rooms[new_room_name] = JSON.parse(JSON.stringify(config.rooms[old_room_name]))
+            delete config.rooms[old_room_name]
+            calculate()      
+        },
+        toggleSection: function (roomName) {
+            $(".room-elements[name="+roomName+"]").slideToggle(); 
+        },
+        add_element: function(roomName) {
+            var length = config.rooms[roomName].elements.length;
+
+            if (length>0) {
+                var last = config.rooms[roomName].elements[length-1]
+                config.rooms[roomName].elements.push(JSON.parse(JSON.stringify(last)))
+            } else {
+                config.rooms[roomName].elements.push({
+                    type:Object.keys(config.element_type)[0],
+                    orientation:"", 
+                    width:0.0, height:0.0
+                });
+            }
+            calculate();   
+        },
+        delete_element: function(roomName,elementIndex) {
+            config.rooms[roomName].elements.splice(elementIndex,1)
+            calculate();       
+        },
+        add_radiator: function(roomName) {
+            var length = config.rooms[roomName].radiators.length;
+
+            if (length>0) {
+                var last = config.rooms[roomName].radiators[length-1]
+                config.rooms[roomName].radiators.push(JSON.parse(JSON.stringify(last)))
+            } else {
+                config.rooms[roomName].radiators.push({
+                    name:"Double Panel Convector 1200x600",
+                    heat50k:2146
+                });
+            }
+            calculate();       
+        },
+        delete_radiator: function(roomName,radiatorIndex) {
+            config.rooms[roomName].radiators.splice(radiatorIndex,1)
+            calculate();
+        },
+        add_ufh: function(roomName) {
+            var length = config.rooms[roomName].ufh.length;
+
+            if (length>0) {
+                var last = config.rooms[roomName].ufh[length-1]
+                config.rooms[roomName].ufh.push(JSON.parse(JSON.stringify(last)))
+            } else {
+                config.rooms[roomName].ufh.push({
+                    name:"16mm diameter, 150mm spacing",
+                    area:config.rooms[roomName].area,
+                    flooring:0.00
+                });
+            }
+            calculate();      
+        },
+        delete_ufh: function(roomName,ufhIndex) {
+            config.rooms[roomName].ufh.splice(ufhIndex,1)
+            calculate();
+        },
+        file_new: function() {
+            for (var z in config_new) {
+                config[z] = JSON.parse(JSON.stringify(config_new[z]))
+            }
+            calculate();
+        },
+        file_open: function(e) {
+            open_file(e)
+        },
+        file_save: function() {
+            download_data("heatlossjs.json",JSON.stringify(config, null, 2))
+        }
+    },
     
-    config.path = this.path
-        
-    // Load template
-    $.ajax({
-      url: this.path+'/template.html?v=3',
-      cache: true,
-      success: function(data) {
-        source = data;
-        heatloss.template  = Handlebars.compile(source);
-        heatloss.calculate()
-      }               
-    });
-}
+    filters: {
+        toFixed: function(val,dp) {
+            if (isNaN(val)) {
+                return val;
+            } else {
+                return val.toFixed(dp)
+            }
+        },
+        toUpperCase: function(val) {
+            return val.toUpperCase();
+        }
+    }
+});
 
-// --------------------------------------------------------------------------------------------
-// Calculation
-// --------------------------------------------------------------------------------------------
-heatloss.calculate = function() {
+function calculate() {
     config.path = this.path
 
     var air_change_factor = 0.33
@@ -187,268 +304,10 @@ heatloss.calculate = function() {
     var heatpump_deltaT = config.house.total_heat_output / ((config.heatpump_flow_rate / 60)*4150)
     config.heatpump_flow_temperature = config.heating_MWT + 0.5*heatpump_deltaT;
     config.heatpump_COP = 0.49 * (config.heatpump_flow_temperature+4+273) / ((config.heatpump_flow_temperature+4+273)-(config.T.external-6+273));
-    
-    $(this.element).html(this.template(config));
-}
-
-// --------------------------------------------------------------------------------------------
-// Events
-// --------------------------------------------------------------------------------------------
-heatloss.events = function() {
-
-    // ------------------------------------------------------
-    // Element types
-    // ------------------------------------------------------
-
-    $(this.element).on('click',".add-element-type",function(){
-
-        var last = false;
-        var index = 0;
-        for (var name in config.element_type) {
-            last = config.element_type[name]
-            index++
-        }
-
-        if (last!=false) {
-            config.element_type["Element "+index] = JSON.parse(JSON.stringify(last))
-        } else {
-            config.element_type["Element "+index] = {uvalue:0}
-        }
-        heatloss.calculate();
-    });
-
-    $(this.element).on('change',".element-type-name",function(){
-        var old_name = $(this).attr("name");
-        var new_name = $(this).val();
-        // Create new element with new name
-        config.element_type[new_name] = config.element_type[old_name]
-        // Update all elements with new name
-        for (var roomName in config.rooms) {
-            for (var elementIndex in config.rooms[roomName].elements) {
-                if (config.rooms[roomName].elements[elementIndex].type==old_name) {
-                    config.rooms[roomName].elements[elementIndex].type = new_name
-                }
-            }
-        }
-        // Delete old element
-        delete config.element_type[old_name]
-        
-        heatloss.calculate();
-    });
-    
-    $(this.element).on('change',".element-type-uvalue",function(){
-        var name = $(this).attr("name");
-        var value = $(this).val();
-        config.element_type[name].uvalue = value;
-        heatloss.calculate();
-    });
-
-    // ------------------------------------------------------
-    // Misc
-    // ------------------------------------------------------
-    
-    $(this.element).on('change',".boundaries",function(){
-        var boundary = $(this).attr("boundary");
-        var value = $(this).val();
-        config.T[boundary] = value;
-        heatloss.calculate();
-    });
-    
-    $(this.element).on('change',".MWT",function(){
-        config.heating_MWT = $(this).val()*1;
-        heatloss.calculate();
-    });
-
-    $(this.element).on('change',".degreedays",function(){
-        config.degreedays = $(this).val()*1;
-        heatloss.calculate();
-    });
-    
-    $(this.element).on('change',".heatpump_flow_rate",function(){
-        config.heatpump_flow_rate = $(this).val()*1;
-        heatloss.calculate();
-    });
-
-    // ------------------------------------------------------
-    // Rooms
-    // ------------------------------------------------------
-
-    $(this.element).on('click',".add-new-room",function(){
-        var n=0; for (var z in config.rooms) n++;
-        config.rooms["Room "+n] = {
-          temperature: 20.0, area: 0.0, height: 0.0, air_change_an_hour: 1.0,
-          elements: [],
-          radiators: []
-        }
-        heatloss.calculate()
-    });
-
-    $(this.element).on('change',".room-input",function(){
-        var room = $(this).attr("room");
-        var property = $(this).attr("prop")
-        var value = $(this).val() * 1
-        config.rooms[room][property] = value
-        heatloss.calculate()
-    });
-    
-    $(this.element).on('change',".room-name",function(){
-        var old_room_name = $(this).attr("room");
-        var new_room_name = $(this).val()
-        config.rooms[new_room_name] = JSON.parse(JSON.stringify(config.rooms[old_room_name]))
-        delete config.rooms[old_room_name]
-        heatloss.calculate()
-    });
-    
-    $(this.element).on('click',".room-heading",function(){
-       var roomName = $(this).attr("name");
-       $(".room-elements[name='"+roomName+"']").slideToggle(); 
-    });
-
-    // ------------------------------------------------------
-    // Element
-    // ------------------------------------------------------
-
-    $(this.element).on('click',".add-element",function(){
-        var roomName = $(this).attr("room");
-        var length = config.rooms[roomName].elements.length;
-
-        if (length>0) {
-            var last = config.rooms[roomName].elements[length-1]
-            config.rooms[roomName].elements.push(JSON.parse(JSON.stringify(last)))
-        } else {
-            config.rooms[roomName].elements.push({
-                type:Object.keys(config.element_type)[0],
-                orientation:"", 
-                width:0.0, height:0.0
-            });
-        }
-        heatloss.calculate();
-    });
-
-    $(this.element).on('click',".delete-element",function(){
-       var tr = $(this).parent().parent();
-       var room = tr.attr("room");
-       var elementIndex = tr.attr("element");
-       config.rooms[room].elements.splice(elementIndex,1)
-       heatloss.calculate();
-    });
-
-    $(this.element).on('change',".element",function(){
-        var tr = $(this).parent().parent();
-        var room = tr.attr("room");
-        var elementIndex = tr.attr("element");
-        var property = $(this).attr("prop");
-        var value = $(this).val();
-        
-        if (property=="width" || property=="height") {
-            value = value * 1;
-            delete config.rooms[room].elements[elementIndex].area
-        }
-        else if (property=="area") {
-            value = value * 1;
-        }
-        
-        config.rooms[room].elements[elementIndex][property] = value;
-        
-        // console.log(room+" "+elementIndex+" "+property+" "+value)
-        
-        heatloss.calculate();
-    });
-
-    // ------------------------------------------------------
-    // Radiators
-    // ------------------------------------------------------
-
-    $(this.element).on('click',".add-radiator",function(){
-        var roomName = $(this).attr("room");
-        var length = config.rooms[roomName].radiators.length;
-
-        if (length>0) {
-            var last = config.rooms[roomName].radiators[length-1]
-            config.rooms[roomName].radiators.push(last)
-        } else {
-            config.rooms[roomName].radiators.push({
-                name:"Double Panel Convector 1200x600",
-                heat50k:2146
-            });
-        }
-        heatloss.calculate();
-    });
-    $(this.element).on('click',".delete-radiator",function(){
-       var tr = $(this).parent().parent();
-       var room = tr.attr("room");
-       var radiatorIndex = tr.attr("radiatorIndex");
-       config.rooms[room].radiators.splice(radiatorIndex,1)
-       heatloss.calculate();
-    });
-    
-    $(this.element).on('change',".radiator",function(){
-        var tr = $(this).parent().parent();
-        var room = tr.attr("room");
-        var radiatorIndex = tr.attr("radiatorIndex");
-        var property = $(this).attr("prop");
-        var value = $(this).val();
-        
-        config.rooms[room].radiators[radiatorIndex][property] = value;
-        
-        heatloss.calculate();
-    });
-    
-    // ------------------------------------------------------
-    // Radiators
-    // ------------------------------------------------------
-
-    $(this.element).on('click',".add-ufh",function(){
-        var roomName = $(this).attr("room");
-        var length = config.rooms[roomName].ufh.length;
-
-        if (length>0) {
-            var last = config.rooms[roomName].ufh[length-1]
-            config.rooms[roomName].ufh.push(last)
-        } else {
-            config.rooms[roomName].ufh.push({
-                name:"16mm diameter, 150mm spacing",
-                area:config.rooms[roomName].area,
-                flooring:0.00
-            });
-        }
-        heatloss.calculate();
-    });
-    $(this.element).on('click',".delete-ufh",function(){
-       var tr = $(this).parent().parent();
-       var room = tr.attr("room");
-       var ufhIndex = tr.attr("ufhIndex");
-       config.rooms[room].ufh.splice(ufhIndex,1)
-       heatloss.calculate();
-    });
-    
-    $(this.element).on('change',".ufh",function(){
-        var tr = $(this).parent().parent();
-        var room = tr.attr("room");
-        var ufhIndex = tr.attr("ufhIndex");
-        var property = $(this).attr("prop");
-        var value = $(this).val();
-        
-        config.rooms[room].ufh[ufhIndex][property] = value;
-        
-        heatloss.calculate();
-    });
-    
-    $(this.element).on('click',".save",function(){
-        download_data("heatlossjs.json",JSON.stringify(config, null, 2))
-    });
-    
-    $(this.element).on('change',"#open",function(e){
-        open_file(e)
-    });
-    
-    $(this.element).on('click',".new",function(e){
-        config = JSON.parse(JSON.stringify(config_new))
-        heatloss.calculate();
-    });
 }
 
 function open_file(e) {
+  console.log(e)
   var file = e.target.files[0];
   if (!file) {
     return;
@@ -456,8 +315,12 @@ function open_file(e) {
   var reader = new FileReader();
   reader.onload = function(e) {
     var contents = JSON.parse(e.target.result);
-    if (contents!=null) config = contents
-    heatloss.calculate();
+    if (contents!=null) {
+        for (var z in contents) {
+            config[z] = JSON.parse(JSON.stringify(contents[z]))
+        }
+        calculate();
+    }
   };
   reader.readAsText(file);
 }
@@ -477,19 +340,3 @@ function download_data(filename, data) {
     }
 }
 
-function ucFirst(string) {
-    return string.charAt(0).toUpperCase() + string.slice(1);
-}
-
-Handlebars.registerHelper('ifeq', function(arg1, arg2, options) {
-    return (arg1 == arg2) ? options.fn(this) : options.inverse(this);
-});
-Handlebars.registerHelper('ifmorethan', function(arg1, arg2, options) {
-    return (arg1 >= arg2) ? options.fn(this) : options.inverse(this);
-});
-Handlebars.registerHelper('toFixed', function(value,dp) {
-   return value.toFixed(dp);
-});
-Handlebars.registerHelper('toUpperCase', function(str) {
-  return str.toUpperCase();
-});
