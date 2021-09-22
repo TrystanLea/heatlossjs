@@ -222,8 +222,7 @@
       <table style="margin-top:10px">
         <tr>
           <td>Combined radiator and UFH output</td>
-          <!-- {{#ifmorethan room.total_heat_output room.heat}} #aee3a4 {{else}} #e3a4a4 {{/ifmorethan}} -->
-          <td style="background-color:#aee3a4">{{ room.total_heat_output | toFixed(0) }}W</td>
+          <td v-bind:style="[room.total_heat_output>room.heat ? {'background-color':'#aee3a4'} : {'background-color':'#e3a4a4'}]">{{ room.total_heat_output | toFixed(0) }}W</td>
         </tr>
       </table>
     </div>
