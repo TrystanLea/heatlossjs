@@ -1,4 +1,6 @@
 var config = {
+  project_name: "bothylab",
+  
   degreedays: 2228,
   heating_MWT: 40.0,
   

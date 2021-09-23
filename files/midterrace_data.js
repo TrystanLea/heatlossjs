@@ -1,4 +1,6 @@
 var config = {
+  project_name: "midterrace",
+  
   degreedays: 1800,
   heating_MWT: 40.0,
   heatpump_flow_rate: 9.0,

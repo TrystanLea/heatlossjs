@@ -1,4 +1,6 @@
 var config = {
+  project_name: "mainhouse",
+  
   degreedays: 2228,
   heating_MWT: 40.0,
   

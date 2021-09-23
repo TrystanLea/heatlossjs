@@ -7,6 +7,11 @@
       <input type="file" id="open" @change="file_open($event)" style="display:none" accept="application/json"/>
       <button class="btn" @click="file_new()">New</button>
     </div>
+    <div class="room-elements">
+      <table style="margin-bottom: 5px;">
+        <tr><td>Project Name</td><td><input type="text" v-model="project_name" ></td></tr>
+      </table>   
+    </div>
   </div>
   
   <div class="section">

@@ -131,7 +131,14 @@ var app = new Vue({
             open_file(e)
         },
         file_save: function() {
-            download_data("heatlossjs.json",JSON.stringify(config, null, 2))
+            var date = new Date();
+            var months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+            var h = date.getHours();
+            if (h<10) h = "0"+h;
+            var m = date.getMinutes();
+            if (m<10) m = "0"+m; 
+            var datestr = date.getDate()+months[date.getMonth()]+h+m
+            download_data("heatlossjs_"+config.project_name+"_"+datestr+".json",JSON.stringify(config, null, 2))
         }
     },
     
@@ -150,8 +157,6 @@ var app = new Vue({
 });
 
 function calculate() {
-    config.path = this.path
-
     var air_change_factor = 0.33
 
     config.house = {
