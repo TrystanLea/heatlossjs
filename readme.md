@@ -7,13 +7,13 @@ A small open source room by room heat loss calculator
 Create html page, load heatloss.js tool with the following:
 
     <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/handlebars@latest/dist/handlebars.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
     
     <script type="text/javascript" src="files/config_new.js"></script>
     <script type="text/javascript" src="files/bothylab_data.js"></script>
-    <link rel="stylesheet" type="text/css" href="heatlossjs/style.css?v=1" />
+    <link rel="stylesheet" type="text/css" href="heatlossjs/style.css" />
+    <div id="heatloss"></div>
     <script type="text/javascript" src="heatlossjs/model.js"></script>
-    <div id="heatloss"></div><script>heatloss.init("#heatloss")</script>
     
 Define your building in json object input definition (loaded in the first line above).
 
