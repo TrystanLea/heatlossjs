@@ -2,8 +2,9 @@
   <div class="section">
     <div class="section-heading">
       <b>HeatLoss.js</b>
-      <button class="btn save" @click="file_save()">Save</button>
-      <button class="btn open" onclick="document.getElementById('open').click()">Open</button>
+      <button class="btn" @click="open_in_sapjs()">Open in SAPjs</button>
+      <button class="btn" @click="file_save()">Save</button>
+      <button class="btn" onclick="document.getElementById('open').click()">Open</button>
       <input type="file" id="open" @change="file_open($event)" style="display:none" accept="application/json"/>
       <button class="btn" @click="file_new()">New</button>
     </div>
@@ -37,7 +38,7 @@
           <tr><th>Boundary</th><th>Temperature</th></tr>
           <tr v-for="(value,boundaryName) in T">
             <td>{{boundaryName}}</td>
-            <td style="width: 120px;"><input style="width: 60%;" type="text" v-model.number="value" @change="update" /><span class="unit">C</span></td>
+            <td style="width: 120px;"><input style="width: 60%;" type="text" v-model.number="T[boundaryName]" @change="update" /><span class="unit">C</span></td>
           </tr>
         </table>
       </div>

@@ -139,6 +139,10 @@ var app = new Vue({
             if (m<10) m = "0"+m; 
             var datestr = date.getDate()+months[date.getMonth()]+h+m
             download_data("heatlossjs_"+config.project_name+"_"+datestr+".json",JSON.stringify(config, null, 2))
+        },
+        open_in_sapjs: function() {
+            localStorage.setItem("heatlossjs",JSON.stringify(config));
+            window.location = "/sapjs?load=heatlossjs"
         }
     },
     
