@@ -10,12 +10,25 @@ $.ajax({
   }               
 });
 
+var dynamic_simulation_interval = false;
+config.solver_running = false;
+
 var app = new Vue({
     el: '#heatloss',
     data: config,
     methods: {
         update: function() {
             calculate();
+            
+            if (config.solver_running) {
+                clearInterval(dynamic_simulation_interval);
+                dynamic_simulation_interval = setInterval(dynamic,100);
+            }
+        },
+        focus: function() {
+           if (config.solver_running) {
+               clearInterval(dynamic_simulation_interval);
+           }
         },
         add_element_type: function() {
             var last = false;
@@ -143,6 +156,14 @@ var app = new Vue({
         open_in_sapjs: function() {
             localStorage.setItem("heatlossjs",JSON.stringify(config));
             window.location = "/sapjs?load=heatlossjs"
+        },
+        start_solver: function() {
+            dynamic_simulation_interval = setInterval(dynamic,100);
+            config.solver_running = true;
+        },
+        stop_solver: function() {
+            clearInterval(dynamic_simulation_interval);
+            config.solver_running = false;
         }
     },
     
@@ -151,6 +172,7 @@ var app = new Vue({
             if (isNaN(val)) {
                 return val;
             } else {
+                if (val==null) return 0;
                 return val.toFixed(dp)
             }
         },
@@ -168,6 +190,11 @@ function calculate() {
         kwh: 0,
         total_heat_output: 0
     };
+    
+    config.JK = 50;
+    
+    config.heating_MWT *=1;
+    if (config.heating_MWT==null || config.heating_MWT=='') config.heating_MWT = 0;
     
     for (var z in config.rooms) {
         var room = config.rooms[z]
@@ -307,13 +334,38 @@ function calculate() {
         config.house.heatloss += room.heat
         config.house.kwh += room.kwh
         config.house.total_heat_output += room.total_heat_output
+        
+        if (room.energy==undefined) room.energy = room.temperature * config.JK;
+        room.energy += ( -room.heat + room.total_heat_output) * 0.01
     }
     
     // Heat pump model
     var heatpump_deltaT = config.house.total_heat_output / ((config.heatpump_flow_rate / 60)*4150)
     config.heatpump_flow_temperature = config.heating_MWT + 0.5*heatpump_deltaT;
-    config.heatpump_COP = 0.49 * (config.heatpump_flow_temperature+4+273) / ((config.heatpump_flow_temperature+4+273)-(config.T.external-6+273));
+    
+    if (config.cop_calculation_method==undefined) {
+        config.cop_calculation_method = "ecodan";
+    }
+    
+    if (config.cop_calculation_method=="carnot") {
+        config.heatpump_COP = 0.49 * (config.heatpump_flow_temperature+4+273) / ((config.heatpump_flow_temperature+4+273)-(config.T.external-6+273));
+    } else {
+        if (config.heatpump_capacity==undefined) config.heatpump_capacity = 5.0;
+        config.heatpump_COP = get_ecodan_cop(config.heatpump_flow_temperature,config.T.external,(config.house.total_heat_output*0.001)/config.heatpump_capacity);
+    }
+    config.heatpump_elec = config.house.total_heat_output / config.heatpump_COP 
 }
+
+// dynamic_simulation_interval = setInterval(dynamic,100);
+
+function dynamic() {
+  calculate()
+  for (var z in config.rooms) {
+      config.rooms[z].temperature = config.rooms[z].energy / config.JK;
+  }
+}
+
+
 
 function open_file(e) {
   console.log(e)

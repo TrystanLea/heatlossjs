@@ -23,7 +23,7 @@
           <tr><th>Element Name</th><th>U-value</th></tr>
           <tr v-for="(element,element_name) in element_type">
             <td><input type="text" v-bind:value="element_name" @change="change_element_type_name($event,element_name)" /></td>
-            <td style="width: 120px;"><input style="width:60%;" type="text" v-model.number="element.uvalue" @change="update" /><span class="unit">W/K.m2</span></td>
+            <td style="width: 120px;"><input style="width:60%;" type="text" v-model.number="element.uvalue" @change="update" @focus="focus" /><span class="unit">W/K.m2</span></td>
           </tr>
           <tr>
             <td>
@@ -38,7 +38,7 @@
           <tr><th>Boundary</th><th>Temperature</th></tr>
           <tr v-for="(value,boundaryName) in T">
             <td>{{boundaryName}}</td>
-            <td style="width: 120px;"><input style="width: 60%;" type="text" v-model.number="T[boundaryName]" @change="update" /><span class="unit">C</span></td>
+            <td style="width: 120px;"><input style="width: 60%;" type="text" v-model.number="T[boundaryName]" @change="update" @focus="focus" /><span class="unit">C</span></td>
           </tr>
         </table>
       </div>
@@ -47,32 +47,63 @@
           <tr><th>Other</th><th>Value</th></tr>
           <tr>
             <td>Radiator Mean Water Temperature (MWT)</td>
-            <td style="width: 120px;"><input style="width: 60%;" type="text" v-model.number="heating_MWT" @change="update" /><span class="unit">C</span></td>
+            <td style="width: 120px;"><input style="width: 60%;" type="text" v-model.number="heating_MWT" @change="update" @focus="focus" /><span class="unit">C</span></td>
           </tr>
           <tr>
             <td>Heating demand degree days</td>
-            <td style="width: 120px;"><input style="width: 60%;" type="text" v-model.number="degreedays" @change="update" /><span class="unit"></span></td>
+            <td style="width: 120px;"><input style="width: 60%;" type="text" v-model.number="degreedays" @change="update" @focus="focus" /><span class="unit"></span></td>
           </tr>
         </table>
       </div>
       <div style="width: 50%; float: right;">
         <table>
-          <tr><th>Heat pump</th><th>Value</th></tr>
           <tr>
-            <td>Flow rate (L/min)</td>
-            <td style="width: 120px;"><input style="width: 60%;" type="text" v-model.number="heatpump_flow_rate" @change="update" /><span class="unit">L/min</span></td>
-          </tr>
-          <tr>
-            <td>Flow temperature</td>
-            <td>{{ heatpump_flow_temperature | toFixed(1) }}<span class="unit">C</span></td>
-          </tr>
-          <tr>
-            <td>COP</td>
-            <td>{{ heatpump_COP | toFixed(1) }}</td>
+            <td>Solve room temperatures</td>
+            <td>
+              <button v-if="!solver_running" @click="start_solver">Start</button>
+              <button v-else @click="stop_solver">Stop</button>
+            </td>
           </tr>
         </table>
       </div>
       <div style="clear: both;"></div>
+    </div>
+  </div>
+  
+  <div class="section">
+    <div class="section-heading"><b>Heat pump</b></div>
+    <div class="room-elements">
+        <table>
+          <tr>
+            <td>Flow rate (L/min)</td>
+            <td style="width:250px"><input style="width: 60px" type="text" v-model.number="heatpump_flow_rate" @change="update" @focus="focus" /><span class="unit">L/min</span></td>
+          </tr>
+          <tr>
+            <td>Flow temperature</td>
+            <td>{{ heatpump_flow_temperature | toFixed(1) }} <span class="unit">C</span></td>
+          </tr>
+          <tr>
+            <td>COP Calculation</td>
+            <td>
+              <select v-model="cop_calculation_method" @change="update" @focus="focus">
+                <option value="carnot">Carnot COP equation</option>
+                <option value="ecodan">EcoDan lookup table interpolation</option>
+              </select>
+            </td>
+          </tr>
+          <tr v-if="cop_calculation_method=='ecodan'">
+            <td>Heat pump capacity (kW heat)</td>
+            <td><input style="width: 60px" type="text" v-model.number="heatpump_capacity" @change="update" @focus="focus" /><span class="unit">kW</span></td>
+          </tr>
+          <tr>
+            <td>COP</td>
+            <td>{{ heatpump_COP | toFixed(2) }}</td>
+          </tr>
+          <tr>
+            <td>Electric input</td>
+            <td>{{ heatpump_elec | toFixed(0) }} <span class="unit">W</span></td>
+          </tr>
+        </table> 
     </div>
   </div>
   
@@ -87,22 +118,22 @@
           <td>Name:</td>
           <td><input type="text" v-bind:value="roomName" @change="change_room_name($event,roomName)" /></td>
           <td>Set point:</td>
-          <td><input type="text" v-model.number="room.temperature" @change="update" style="width:65px" /></td>
+          <td><input type="text" v-model.number="room.temperature" @change="update" @focus="focus" style="width:65px" /></td>
           <td>Air changes per hour:</td>
-          <td><input type="text" v-model.number="room.air_change_an_hour" @change="update" style="width:65px" /></td>
+          <td><input type="text" v-model.number="room.air_change_an_hour" @change="update" @focus="focus" style="width:65px" /></td>
         </tr>
       </table>
       <table style="margin-bottom: 5px;">
         <tr>
           <td>Room</td>
           <td style="text-align: right;">Width:</td>
-          <td style="width: 65px;"><input type="text" v-model.number="room.width" @change="update" /><span class="unit">m</span></td>
+          <td style="width: 65px;"><input type="text" v-model.number="room.width" @change="update" @focus="focus" /><span class="unit">m</span></td>
           <td style="text-align: right;">Length:</td>
-          <td style="width: 65px;"><input type="text" v-model.number="room.length" @change="update" /><span class="unit">m</span></td>
+          <td style="width: 65px;"><input type="text" v-model.number="room.length" @change="update" @focus="focus" /><span class="unit">m</span></td>
           <td style="text-align: right;">Height:</td>
-          <td style="width: 65px;"><input type="text" v-model.number="room.height" @change="update" /><span class="unit">m</span></td>
+          <td style="width: 65px;"><input type="text" v-model.number="room.height" @change="update" @focus="focus" /><span class="unit">m</span></td>
           <td style="text-align: right;">Area:</td>
-          <td style="width: 65px;"><input type="text" v-model.number="room.area" @change="update" /><span class="unit">m2</span></td>
+          <td style="width: 65px;"><input type="text" v-model.number="room.area" @change="update" @focus="focus" /><span class="unit">m2</span></td>
           <td style="text-align: right;">Volume:</td>
           <td><div class="value">{{ room.volume | toFixed(1) }}</div><span class="unit">m3</span></td>
           <td style="text-align: right;"><b>Heat loss:</b></td>
@@ -128,25 +159,25 @@
         <tr v-for="(element,elementIndex) in room.elements">
           <td>{{ elementIndex }}</td>
           <td>
-            <select v-model="element.type" @change="update">
+            <select v-model="element.type" @change="update" @focus="focus">
               <option v-for="(type,element_name) in element_type">{{ element_name }}</option>
             </select>
           </td>
           <td>
-            <select v-model="element.boundary" @change="update">
+            <select v-model="element.boundary" @change="update" @focus="focus">
               <option v-for="(value,key) in T" v-bind:value="key">{{ key | toUpperCase }}</option>
               <option v-for="(value,key) in rooms" v-bind:value="key">{{ key | toUpperCase }}</option>
             </select>
           </td>
           <td>
-            <select v-model="element.subtractfrom" @change="update">
+            <select v-model="element.subtractfrom" @change="update" @focus="focus">
               <option></option>
               <option v-for="(value,key) in room.elements">{{ key }}</option>
             </select>
           </td>
-          <td><input type="text" v-model="element.orientation" @change="update" /></td>
-          <td><input type="text" v-model.number="element.width" @change="update" /><span class="unit">m</span></td>
-          <td><input type="text" v-model.number="element.height" @change="update" /><span class="unit">m</span></td>
+          <td><input type="text" v-model="element.orientation" @change="update" @focus="focus"/></td>
+          <td><input type="text" v-model.number="element.width" @change="update" @focus="focus"/><span class="unit">m</span></td>
+          <td><input type="text" v-model.number="element.height" @change="update" @focus="focus"/><span class="unit">m</span></td>
           <td><input type="text" v-bind:value="element.A | toFixed(1)" /><span class="unit">m2</span></td>
           <td>
             <div class="value">{{ element.uvalue }}</div>
@@ -180,11 +211,11 @@
       <table class="room-radiators-table">
         <tr v-for="(radiator,radiatorIndex) in room.radiators">
           <td>
-            <input type="text" v-model="radiator.name" @change="update" style="width:400px">
+            <input type="text" v-model="radiator.name" @change="update" @focus="focus" style="width:400px">
           </td>
           <td>
             <div v-if="radiator.model=='pow'">
-              <input type="text" v-model.number="radiator.heat50k" @change="update"style="width:50px">
+              <input type="text" v-model.number="radiator.heat50k" @change="update" @focus="focus" style="width:50px">
               <span class="unit">W @ 50k</span>
             </div>
             <div v-else>              
@@ -210,12 +241,12 @@
           </td>
           <td>
             Area: 
-            <input type="text" v-model.number="ufh.area" @change="update" style="width:50px">
+            <input type="text" v-model.number="ufh.area" @change="update" @focus="focus" style="width:50px">
             <span class="unit">m2</span>
           </td>
           <td>
             Floor covering: 
-            <input type="text" v-model.number="ufh.flooring" @change="update" style="width:50px">
+            <input type="text" v-model.number="ufh.flooring" @change="update" @focus="focus" style="width:50px">
             <span class="unit">W/m2.K</span>
           </td>
           <td style="width: 120px;">
