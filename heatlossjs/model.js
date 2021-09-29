@@ -265,10 +265,7 @@ function calculate() {
             e.heat = e.wk * e.deltaT
                         
             e.kwh = e.wk * config.degreedays * 0.024
-            if (e.type=="Floor:First") e.kwh = 0
-            else if (e.type=="Wall:Internal") e.kwh = 0
-            else if (e.type=="Wall:InternalOpenDoor") e.kwh = 0
-            else if (e.type=="Wall:Party") e.kwh = 0
+            if (e.boundary!='external' && e.boundary!='ground') e.kwh = 0
             
             room.wk += e.wk
             room.heat += e.heat
