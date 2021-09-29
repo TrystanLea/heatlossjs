@@ -144,6 +144,26 @@ var app = new Vue({
             open_file(e)
         },
         file_save: function() {
+        
+            // Filter out computed properties
+            var filtered_config = JSON.parse(JSON.stringify(config));           
+            /*
+            for (var z in filtered_config.rooms) {
+                for (var i in filtered_config.rooms[z].elements) {
+                    delete filtered_config.rooms[z].elements[i].A;
+                    delete filtered_config.rooms[z].elements[i].uvalue;
+                    delete filtered_config.rooms[z].elements[i].wk;
+                    delete filtered_config.rooms[z].elements[i].deltaT;
+                    delete filtered_config.rooms[z].elements[i].heat;
+                    delete filtered_config.rooms[z].elements[i].kwh;
+                }
+                delete filtered_config.rooms[z].wk;
+                delete filtered_config.rooms[z].heat;
+                delete filtered_config.rooms[z].kwh;
+                delete filtered_config.rooms[z].A;
+                delete filtered_config.rooms[z].area;
+            }*/
+    
             var date = new Date();
             var months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
             var h = date.getHours();
@@ -151,7 +171,7 @@ var app = new Vue({
             var m = date.getMinutes();
             if (m<10) m = "0"+m; 
             var datestr = date.getDate()+months[date.getMonth()]+h+m
-            download_data("heatlossjs_"+config.project_name+"_"+datestr+".json",JSON.stringify(config, null, 2))
+            download_data("heatlossjs_"+config.project_name+"_"+datestr+".json",JSON.stringify(filtered_config, null, 2))
         },
         open_in_sapjs: function() {
             localStorage.setItem("heatlossjs",JSON.stringify(config));
@@ -188,7 +208,8 @@ function calculate() {
     config.house = {
         heatloss: 0,
         kwh: 0,
-        total_heat_output: 0
+        total_heat_output: 0,
+        internal_heat_balance: 0,
     };
     
     config.JK = 50;
@@ -242,10 +263,11 @@ function calculate() {
             e.wk = e.A * e.uvalue
             e.deltaT = room.temperature - e.temperature
             e.heat = e.wk * e.deltaT
-            
+                        
             e.kwh = e.wk * config.degreedays * 0.024
             if (e.type=="Floor:First") e.kwh = 0
             else if (e.type=="Wall:Internal") e.kwh = 0
+            else if (e.type=="Wall:InternalOpenDoor") e.kwh = 0
             else if (e.type=="Wall:Party") e.kwh = 0
             
             room.wk += e.wk
@@ -254,8 +276,11 @@ function calculate() {
             room.A += e.A
             
             if (e.boundary=='external') config.house.wk += e.wk
-            if (e.boundary=='unheated') config.house.wk += e.wk
-            if (e.boundary=='ground') config.house.wk += e.wk
+            else if (e.boundary=='unheated') config.house.wk += e.wk
+            else if (e.boundary=='ground') config.house.wk += e.wk
+            else {
+                config.house.internal_heat_balance += e.heat  
+            }    
         }
 
         // ----------------------------------------------------------------------------------------

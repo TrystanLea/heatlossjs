@@ -259,7 +259,7 @@
       <table style="margin-top:10px">
         <tr>
           <td>Combined radiator and UFH output</td>
-          <td v-bind:style="[room.total_heat_output>room.heat ? {'background-color':'#aee3a4'} : {'background-color':'#e3a4a4'}]">{{ room.total_heat_output | toFixed(0) }}W</td>
+          <td v-bind:style="[room.total_heat_output>=(room.heat-1) ? {'background-color':'#aee3a4'} : {'background-color':'#e3a4a4'}]">{{ room.total_heat_output | toFixed(0) }}W</td>
         </tr>
       </table>
     </div>
@@ -274,6 +274,7 @@
         <tr><td>Annual space heating demand:</td><td><div class="value">{{ house.kwh | toFixed(0) }}</div><span class="unit">kWh</span></td></tr>
         <tr><td>Maximum heat requirement:</td><td><div class="value">{{ house.heatloss | toFixed(0) }}</div><span class="unit">W</span></td></tr>
         <tr><td>Total radiator & UFH output</td><td><div class="value">{{ house.total_heat_output | toFixed(0) }}</div><span class="unit">W</span></td></tr>
+        <tr><td>Internal heat balance (should be zero)</td><td><div class="value">{{ house.internal_heat_balance | toFixed(0) }}</div><span class="unit">W</span></td></tr>
       </table>
     </div>
   </div>
