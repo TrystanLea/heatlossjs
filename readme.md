@@ -30,7 +30,7 @@ Examples with notes on input values:
 - [Bothy](https://trystanlea.org.uk/bothy)
 - [Detached house](https://trystanlea.org.uk/house)
 
-#Other people doing good work with this project
+# Other people doing good work with this project
 
 - **heatlossjsITA** An Italian adaptation of heatlossjs developed by @jumpjack. New features include taking into account different rates fo heat loss from external walls depending on orientation as well as translation to Italian. https://github.com/jumpjack/heatlossjsITA
 
