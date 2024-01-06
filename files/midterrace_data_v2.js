@@ -1,7 +1,7 @@
 var config = {
   "project_name": "midterrace",
-  "degreedays": 1800,
-  "heating_MWT": 40,
+  "degreedays": 1750,
+  "heating_MWT": 36,
   "heatpump_flow_rate": 12,
   "T": {
     "external": -3,
@@ -22,7 +22,7 @@ var config = {
       "uvalue": 0.18
     },
     "Wall:External": {
-      "uvalue": 1.4
+      "uvalue": 1.6
     },
     "Wall:Internal": {
       "uvalue": 2
@@ -31,7 +31,7 @@ var config = {
       "uvalue": 0.5
     },
     "Glazing:Double": {
-      "uvalue": 1.6
+      "uvalue": 2.1
     },
     "Wall:InternalOpenDoor": {
       "uvalue": 35
@@ -43,7 +43,7 @@ var config = {
       "width": 3.4,
       "length": 7.2,
       "height": 2.4,
-      "air_change_an_hour": 1.5,
+      "air_change_an_hour": 0.5,
       "elements": [
         {
           "type": "Wall:External",
@@ -258,7 +258,7 @@ var config = {
       "width": 1,
       "length": 7.2,
       "height": 2.4,
-      "air_change_an_hour": 1.5,
+      "air_change_an_hour": 0.5,
       "elements": [
         {
           "type": "Wall:External",
@@ -387,7 +387,7 @@ var config = {
       "width": 2.4,
       "length": 3,
       "height": 2.4,
-      "air_change_an_hour": 2,
+      "air_change_an_hour": 0.5,
       "elements": [
         {
           "type": "Wall:InternalOpenDoor",
@@ -523,7 +523,7 @@ var config = {
       "width": 3,
       "length": 3.5,
       "height": 2.4,
-      "air_change_an_hour": 1.5,
+      "air_change_an_hour": 0.5,
       "elements": [
         {
           "type": "Wall:Internal",
@@ -665,7 +665,7 @@ var config = {
       "width": 2.6,
       "length": 3.2,
       "height": 2.4,
-      "air_change_an_hour": 1.5,
+      "air_change_an_hour": 0.5,
       "elements": [
         {
           "type": "Wall:External",
@@ -808,7 +808,7 @@ var config = {
       "width": 1.8,
       "length": 2.2,
       "height": 2.4,
-      "air_change_an_hour": 1.5,
+      "air_change_an_hour": 0.5,
       "elements": [
         {
           "type": "Wall:External",
@@ -951,7 +951,7 @@ var config = {
       "width": 1.5,
       "length": 4.4,
       "height": 2.4,
-      "air_change_an_hour": 1,
+      "air_change_an_hour": 0.5,
       "elements": [
         {
           "type": "Wall:Internal",
@@ -1085,7 +1085,7 @@ var config = {
       "width": 2.4,
       "length": 3.3,
       "height": 2.4,
-      "air_change_an_hour": 2,
+      "air_change_an_hour": 0.5,
       "elements": [
         {
           "type": "Wall:InternalOpenDoor",
