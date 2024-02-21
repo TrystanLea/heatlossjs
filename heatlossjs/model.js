@@ -2,7 +2,7 @@ calculate();
 
 // Load template
 $.ajax({
-  url: 'heatlossjs/template.html?v=1',
+  url: 'heatlossjs/template.html?v=2',
   cache: true,
   async:false,
   success: function(data) {
@@ -25,6 +25,7 @@ var app = new Vue({
                 dynamic_simulation_interval = setInterval(dynamic,100);
             }
         },
+        
         focus: function() {
            if (config.solver_running) {
                clearInterval(dynamic_simulation_interval);
@@ -63,7 +64,7 @@ var app = new Vue({
         add_new_room: function() {
             var n=0; for (var z in config.rooms) n++;
             config.rooms["Room "+n] = {
-                temperature: 20.0, area: 0.0, height: 0.0, air_change_an_hour: 1.0,
+                temperature: 20.0, area: 0.0, height: 2.4, air_change_an_hour: 0.5,
                 elements: [],
                 radiators: []
             }
@@ -82,20 +83,59 @@ var app = new Vue({
             var length = config.rooms[roomName].elements.length;
 
             if (length>0) {
-                var last = config.rooms[roomName].elements[length-1]
-                config.rooms[roomName].elements.push(JSON.parse(JSON.stringify(last)))
+                var copy = JSON.parse(JSON.stringify(config.rooms[roomName].elements[length-1]));
+                delete copy.link;
+                config.rooms[roomName].elements.push(copy)
+                app.generate_link(roomName,config.rooms[roomName].elements.length-1);
             } else {
                 config.rooms[roomName].elements.push({
                     type:Object.keys(config.element_type)[0],
                     orientation:"", 
-                    width:0.0, height:0.0
+                    width:config.rooms[roomName].width,
+                    height: config.rooms[roomName].height
                 });
             }
             calculate();   
         },
+        
+        update_element: function(roomName,elementIndex, field) {
+            
+            // Update linked element
+            if (config.rooms[roomName].elements[elementIndex].link!=undefined) {
+                var boundary = config.rooms[roomName].elements[elementIndex].boundary;
+                var linkIndex = config.rooms[roomName].elements[elementIndex].link;
+                config.rooms[boundary].elements[linkIndex][field] = config.rooms[roomName].elements[elementIndex][field]
+            }
+            
+            app.update();
+        },
+        
         delete_element: function(roomName,elementIndex) {
+            // Delete linked element if set
+            if (config.rooms[roomName].elements[elementIndex].link!=undefined) {
+                var boundary = config.rooms[roomName].elements[elementIndex].boundary;
+                var linkIndex = config.rooms[roomName].elements[elementIndex].link;
+                config.rooms[boundary].elements.splice(linkIndex,1)
+            }
+            
             config.rooms[roomName].elements.splice(elementIndex,1)
             calculate();       
+        },
+        update_boundary: function(roomName,elementIndex) {
+            app.generate_link(roomName,elementIndex);
+            calculate();
+        },
+        generate_link: function(roomName,elementIndex) {
+            var boundary = config.rooms[roomName].elements[elementIndex].boundary;
+            if (boundary!="ground" && boundary!="unheated" && boundary!="external") {
+                if (config.rooms[roomName].elements[elementIndex].link==undefined) {
+                    var copy = JSON.parse(JSON.stringify(config.rooms[roomName].elements[elementIndex]));
+                    copy.boundary = roomName;
+                    copy.link = elementIndex;
+                    config.rooms[boundary].elements.push(copy);
+                    config.rooms[roomName].elements[elementIndex].link = config.rooms[boundary].elements.length-1;
+                }
+            }
         },
         add_radiator: function(roomName) {
             var length = config.rooms[roomName].radiators.length;
@@ -203,6 +243,7 @@ var app = new Vue({
 });
 
 function calculate() {
+    
     var air_change_factor = 0.33
 
     config.house = {

@@ -164,7 +164,7 @@
             </select>
           </td>
           <td>
-            <select v-model="element.boundary" @change="update" @focus="focus">
+            <select v-model="element.boundary" @change="update_boundary(roomName,elementIndex)" @focus="focus">
               <option v-for="(value,key) in T" v-bind:value="key">{{ key | toUpperCase }}</option>
               <option v-for="(value,key) in rooms" v-bind:value="key">{{ key | toUpperCase }}</option>
             </select>
@@ -175,9 +175,9 @@
               <option v-for="(value,key) in room.elements">{{ key }}</option>
             </select>
           </td>
-          <td><input type="text" v-model="element.orientation" @change="update" @focus="focus"/></td>
-          <td><input type="text" v-model.number="element.width" @change="update" @focus="focus"/><span class="unit">m</span></td>
-          <td><input type="text" v-model.number="element.height" @change="update" @focus="focus"/><span class="unit">m</span></td>
+          <td><input type="text" v-model="element.orientation" @change="update_element(roomName,elementIndex,'orientation')" @focus="focus"/></td>
+          <td><input type="text" v-model.number="element.width" @change="update_element(roomName,elementIndex,'width')" @focus="focus"/><span class="unit">m</span></td>
+          <td><input type="text" v-model.number="element.height" @change="update_element(roomName,elementIndex,'height')" @focus="focus"/><span class="unit">m</span></td>
           <td><input type="text" v-bind:value="element.A | toFixed(1)" /><span class="unit">m2</span></td>
           <td>
             <div class="value">{{ element.uvalue }}</div>
