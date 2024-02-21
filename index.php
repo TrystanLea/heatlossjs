@@ -33,5 +33,5 @@
   </div>
 </body>
 <script type="text/javascript" src="heatlossjs/ecodan.js?v=3"></script>
-<script type="text/javascript" src="heatlossjs/model.js?v=6"></script>
+<script type="text/javascript" src="heatlossjs/model.js?v=<?php echo time(); ?>"></script>
 

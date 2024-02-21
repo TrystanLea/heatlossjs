@@ -166,7 +166,7 @@
           <td>
             <select v-model="element.boundary" @change="update_boundary(roomName,elementIndex)" @focus="focus">
               <option v-for="(value,key) in T" v-bind:value="key">{{ key | toUpperCase }}</option>
-              <option v-for="(value,key) in rooms" v-bind:value="key">{{ key | toUpperCase }}</option>
+              <option v-for="(value,key) in rooms" v-bind:value="key" v-if="roomName!=key">{{ key | toUpperCase }}</option>
             </select>
           </td>
           <td>

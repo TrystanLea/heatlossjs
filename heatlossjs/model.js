@@ -2,7 +2,7 @@ calculate();
 
 // Load template
 $.ajax({
-  url: 'heatlossjs/template.html?v=2',
+  url: 'heatlossjs/template.html?v=4',
   cache: true,
   async:false,
   success: function(data) {
@@ -84,7 +84,7 @@ var app = new Vue({
 
             if (length>0) {
                 var copy = JSON.parse(JSON.stringify(config.rooms[roomName].elements[length-1]));
-                delete copy.link;
+                delete copy.linked_element;
                 config.rooms[roomName].elements.push(copy)
                 app.generate_link(roomName,config.rooms[roomName].elements.length-1);
             } else {
@@ -101,39 +101,48 @@ var app = new Vue({
         update_element: function(roomName,elementIndex, field) {
             
             // Update linked element
-            if (config.rooms[roomName].elements[elementIndex].link!=undefined) {
-                var boundary = config.rooms[roomName].elements[elementIndex].boundary;
-                var linkIndex = config.rooms[roomName].elements[elementIndex].link;
-                config.rooms[boundary].elements[linkIndex][field] = config.rooms[roomName].elements[elementIndex][field]
+            if (config.rooms[roomName].elements[elementIndex].linked_element!=undefined) {
+                var linked_room = config.rooms[roomName].elements[elementIndex].linked_room;
+                var linked_element = config.rooms[roomName].elements[elementIndex].linked_element;
+                config.rooms[linked_room].elements[linked_element][field] = config.rooms[roomName].elements[elementIndex][field]
             }
             
             app.update();
         },
         
         delete_element: function(roomName,elementIndex) {
-            // Delete linked element if set
-            if (config.rooms[roomName].elements[elementIndex].link!=undefined) {
-                var boundary = config.rooms[roomName].elements[elementIndex].boundary;
-                var linkIndex = config.rooms[roomName].elements[elementIndex].link;
-                config.rooms[boundary].elements.splice(linkIndex,1)
-            }
-            
+            app.delete_link(roomName,elementIndex);
             config.rooms[roomName].elements.splice(elementIndex,1)
             calculate();       
         },
         update_boundary: function(roomName,elementIndex) {
+            app.delete_link(roomName,elementIndex);
             app.generate_link(roomName,elementIndex);
             calculate();
+        },
+        delete_link: function(roomName,elementIndex) {
+            if (config.rooms[roomName].elements[elementIndex]!=undefined) {
+                if (config.rooms[roomName].elements[elementIndex].linked_element!=undefined) {
+                    var linked_room = config.rooms[roomName].elements[elementIndex].linked_room;
+                    var linked_element = config.rooms[roomName].elements[elementIndex].linked_element;
+                    config.rooms[linked_room].elements.splice(linked_element,1)
+                    delete config.rooms[roomName].elements[elementIndex].linked_room;
+                    delete config.rooms[roomName].elements[elementIndex].linked_element;
+                }
+            }
         },
         generate_link: function(roomName,elementIndex) {
             var boundary = config.rooms[roomName].elements[elementIndex].boundary;
             if (boundary!="ground" && boundary!="unheated" && boundary!="external") {
-                if (config.rooms[roomName].elements[elementIndex].link==undefined) {
+                if (config.rooms[roomName].elements[elementIndex].linked_element==undefined) {
                     var copy = JSON.parse(JSON.stringify(config.rooms[roomName].elements[elementIndex]));
                     copy.boundary = roomName;
-                    copy.link = elementIndex;
+                    copy.linked_room = roomName;
+                    copy.linked_element = elementIndex;
                     config.rooms[boundary].elements.push(copy);
-                    config.rooms[roomName].elements[elementIndex].link = config.rooms[boundary].elements.length-1;
+                    
+                    config.rooms[roomName].elements[elementIndex].linked_room = boundary;
+                    config.rooms[roomName].elements[elementIndex].linked_element = config.rooms[boundary].elements.length-1;
                 }
             }
         },
