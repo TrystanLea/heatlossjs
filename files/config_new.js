@@ -23,8 +23,10 @@ var config_new = {
    "Livingroom":{
       temperature: 20.0,
       area: 0.0, 
-      height: 0.0,
-      air_change_an_hour: 1.0,
+      width: 0.0,
+      length: 0.0,
+      height: 2.4,
+      air_change_an_hour: 0.5,
       
       elements: [
       ],
