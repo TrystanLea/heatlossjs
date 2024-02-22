@@ -1,5 +1,4 @@
 <?php $v = time(); ?>
-
 <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
 
