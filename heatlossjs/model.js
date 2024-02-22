@@ -462,9 +462,52 @@ function open_file(e) {
   reader.onload = function(e) {
     var contents = JSON.parse(e.target.result);
     if (contents!=null) {
+    
+        var tmp = {}
+    
         for (var z in contents) {
-            config[z] = JSON.parse(JSON.stringify(contents[z]))
+            tmp[z] = JSON.parse(JSON.stringify(contents[z]))
         }
+        
+        // Translate old formats
+        if (tmp.elements == undefined) {
+            alert("old format, attempting conversion...");
+            
+            tmp.elements = [];
+            
+            for (var room in tmp.rooms) {
+                for (var z in tmp.rooms[room].elements) {
+                
+                    let e = tmp.rooms[room].elements[z]
+                    
+                    let new_element = {
+                        type: e.type,
+                        orientation: e.orientation,
+                        width: e.width,
+                        height: e.height
+                    };
+                    
+                    if (e.subtractfrom != undefined && tmp.rooms[room].elements[e.subtractfrom] != undefined) {
+                        let e2 = tmp.rooms[room].elements[e.subtractfrom];
+                        if (e2.id != undefined) {
+                            new_element.subtractfrom = e2.id;
+                        }
+                    }
+                
+                    tmp.elements.push(new_element);
+                    
+                    tmp.rooms[room].elements[z] = {
+                        id: tmp.elements.length - 1,
+                        boundary: e.boundary 
+                    }
+                }
+            }
+        }
+        
+        for (var z in tmp) {
+            config[z] = JSON.parse(JSON.stringify(tmp[z]))
+        }
+        
         calculate();
     }
   };
