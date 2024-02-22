@@ -157,30 +157,30 @@
           <th>Heat loss</th>
         </tr>
         <tr v-for="(element,elementIndex) in room.elements">
-          <td>{{ elementIndex }}</td>
+          <td>{{ element.id }}</td>
           <td>
-            <select v-model="element.type" @change="update" @focus="focus">
+            <select v-model="elements[element.id].type" @change="update" @focus="focus">
               <option v-for="(type,element_name) in element_type">{{ element_name }}</option>
             </select>
           </td>
           <td>
-            <select v-model="element.boundary" @change="update_boundary(roomName,elementIndex)" @focus="focus">
+            <select :value="element.boundary" @change="update_boundary($event,roomName,elementIndex)" @focus="focus">
               <option v-for="(value,key) in T" v-bind:value="key">{{ key | toUpperCase }}</option>
               <option v-for="(value,key) in rooms" v-bind:value="key" v-if="roomName!=key">{{ key | toUpperCase }}</option>
             </select>
           </td>
           <td>
-            <select v-model="element.subtractfrom" @change="update" @focus="focus">
+            <select v-model="elements[element.id].subtractfrom" @change="update" @focus="focus">
               <option></option>
-              <option v-for="(value,key) in room.elements">{{ key }}</option>
+              <option v-for="(sub_element,key) in room.elements" v-if="sub_element.id!=element.id">{{ sub_element.id }}</option>
             </select>
           </td>
-          <td><input type="text" v-model="element.orientation" @change="update_element(roomName,elementIndex,'orientation')" @focus="focus"/></td>
-          <td><input type="text" v-model.number="element.width" @change="update_element(roomName,elementIndex,'width')" @focus="focus"/><span class="unit">m</span></td>
-          <td><input type="text" v-model.number="element.height" @change="update_element(roomName,elementIndex,'height')" @focus="focus"/><span class="unit">m</span></td>
-          <td><input type="text" v-bind:value="element.A | toFixed(1)" /><span class="unit">m2</span></td>
+          <td><input type="text" v-model="elements[element.id].orientation" @change="update" @focus="focus"/></td>
+          <td><input type="text" v-model.number="elements[element.id].width" @change="update" @focus="focus"/><span class="unit">m</span></td>
+          <td><input type="text" v-model.number="elements[element.id].height" @change="update" @focus="focus"/><span class="unit">m</span></td>
+          <td><input type="text" v-bind:value="elements[element.id].A | toFixed(1)" /><span class="unit">m2</span></td>
           <td>
-            <div class="value">{{ element.uvalue }}</div>
+            <div class="value">{{ elements[element.id].uvalue }}</div>
           </td>
           <td>
             <div class="value">{{ element.heat | toFixed(0) }}</div>

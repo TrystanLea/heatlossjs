@@ -1,8 +1,14 @@
+// =========================================
+var heatlossjs_version = 3;
+// =========================================
+
+var config = config_new;
+
 calculate();
 
 // Load template
 $.ajax({
-  url: 'heatlossjs/template.html?v=4',
+  url: 'heatlossjs/template.html?v='+cachev,
   cache: true,
   async:false,
   success: function(data) {
@@ -81,71 +87,69 @@ var app = new Vue({
         },
         add_element: function(roomName) {
             var length = config.rooms[roomName].elements.length;
-
             if (length>0) {
-                var copy = JSON.parse(JSON.stringify(config.rooms[roomName].elements[length-1]));
-                delete copy.linked_element;
-                config.rooms[roomName].elements.push(copy)
-                app.generate_link(roomName,config.rooms[roomName].elements.length-1);
+                var id = config.rooms[roomName].elements[length-1].id;
+                config.elements.push({
+                    type: config.elements[id].type,
+                    orientation: config.elements[id].orientation,
+                    width: config.elements[id].width,
+                    height: config.elements[id].height
+                });
             } else {
-                config.rooms[roomName].elements.push({
+                config.elements.push({
                     type:Object.keys(config.element_type)[0],
                     orientation:"", 
                     width:config.rooms[roomName].width,
                     height: config.rooms[roomName].height
                 });
             }
+            
+            var elementIndex = config.elements.length - 1;
+            config.rooms[roomName].elements.push({
+                id: elementIndex, 
+                boundary: 'external'
+            }); 
+            
             calculate();   
         },
         
-        update_element: function(roomName,elementIndex, field) {
-            
-            // Update linked element
-            if (config.rooms[roomName].elements[elementIndex].linked_element!=undefined) {
-                var linked_room = config.rooms[roomName].elements[elementIndex].linked_room;
-                var linked_element = config.rooms[roomName].elements[elementIndex].linked_element;
-                config.rooms[linked_room].elements[linked_element][field] = config.rooms[roomName].elements[elementIndex][field]
-            }
-            
-            app.update();
-        },
-        
         delete_element: function(roomName,elementIndex) {
-            app.delete_link(roomName,elementIndex);
-            config.rooms[roomName].elements.splice(elementIndex,1)
-            calculate();       
-        },
-        update_boundary: function(roomName,elementIndex) {
-            app.delete_link(roomName,elementIndex);
-            app.generate_link(roomName,elementIndex);
+            var e = config.rooms[roomName].elements[elementIndex]
+            
+            // Remove the base element
+            config.elements.splice(e.id,1)
+            // Remove this element
+            config.rooms[roomName].elements.splice(elementIndex,1)  
+            // Remove the linked room entry
+            if (e.link!=undefined) {
+                config.rooms[e.boundary].elements.splice(e.link,1)
+            }
+                     
             calculate();
         },
-        delete_link: function(roomName,elementIndex) {
-            if (config.rooms[roomName].elements[elementIndex]!=undefined) {
-                if (config.rooms[roomName].elements[elementIndex].linked_element!=undefined) {
-                    var linked_room = config.rooms[roomName].elements[elementIndex].linked_room;
-                    var linked_element = config.rooms[roomName].elements[elementIndex].linked_element;
-                    config.rooms[linked_room].elements.splice(linked_element,1)
-                    delete config.rooms[roomName].elements[elementIndex].linked_room;
-                    delete config.rooms[roomName].elements[elementIndex].linked_element;
+        update_boundary: function(event,roomName,elementIndex) {
+            var e = config.rooms[roomName].elements[elementIndex];
+            var o = { boundary: e.boundary };
+            
+            // Assign new boundary 
+            e.boundary = event.target.value
+            
+            // Remove linked element from original boundary
+            if (o.boundary != "external" && o.boundary != "unheated" && o.boundary != "ground") {  
+                if (e.link!=undefined) {
+                    config.rooms[o.boundary].elements.splice(e.link,1)
                 }
             }
-        },
-        generate_link: function(roomName,elementIndex) {
-            var boundary = config.rooms[roomName].elements[elementIndex].boundary;
-            if (boundary!="ground" && boundary!="unheated" && boundary!="external") {
-                if (config.rooms[roomName].elements[elementIndex].linked_element==undefined) {
-                    var copy = JSON.parse(JSON.stringify(config.rooms[roomName].elements[elementIndex]));
-                    copy.boundary = roomName;
-                    copy.linked_room = roomName;
-                    copy.linked_element = elementIndex;
-                    config.rooms[boundary].elements.push(copy);
-                    
-                    config.rooms[roomName].elements[elementIndex].linked_room = boundary;
-                    config.rooms[roomName].elements[elementIndex].linked_element = config.rooms[boundary].elements.length-1;
-                }
+
+            // Only link if another room
+            if (e.boundary != "external" && e.boundary != "unheated" && e.boundary != "ground") {                
+                // Add link 
+                config.rooms[e.boundary].elements.push({id: e.id, link: elementIndex, boundary: roomName});
+                e.link = config.rooms[e.boundary].elements.length - 1;
             }
+            calculate();
         },
+        
         add_radiator: function(roomName) {
             var length = config.rooms[roomName].radiators.length;
 
@@ -267,6 +271,39 @@ function calculate() {
     config.heating_MWT *=1;
     if (config.heating_MWT==null || config.heating_MWT=='') config.heating_MWT = 0;
     
+    // Pre calculate elements
+    for (var z in config.elements) {
+        var e = config.elements[z];
+
+        if (e.orientation==undefined) e.orientation = "";
+
+        if (e.area!=undefined) {
+            e.A = e.area
+            e.width = 0;
+            e.height = 0;
+        } else {
+            e.A = e.width * e.height
+        }
+        
+        // Subtract windows and doors from wall and floor elements
+        for (var i2 in config.elements) {
+            var e2 = config.elements[i2]
+            if (e2.subtractfrom==z) {
+                if (e2.area!=undefined) {
+                    e2.A = e2.area
+                } else {
+                    e2.A = e2.width * e2.height
+                }
+                e.A -= e2.A
+            }
+        }
+        
+        // Calculate: heat loss rate, deltaT and heat loss
+        e.uvalue = config.element_type[e.type].uvalue
+        e.wk = e.A * e.uvalue
+    }
+    
+    
     for (var z in config.rooms) {
         var room = config.rooms[z]
         
@@ -277,7 +314,7 @@ function calculate() {
         
         for (var i in room.elements) {
             var e = room.elements[i]
-            if (e.orientation==undefined) e.orientation = ""
+            var WK = config.elements[e.id].wk;
             
             // Boundary temperature
             if (e.boundary==undefined) e.boundary = 'external'
@@ -287,44 +324,20 @@ function calculate() {
                 e.temperature = config.rooms[e.boundary].temperature
             }
             
-            if (e.area!=undefined) {
-                e.A = e.area
-                e.width = 0;
-                e.height = 0;
-            } else {
-                e.A = e.width * e.height
-            }
-            
-            // Subtract windows and doors from wall and floor elements
-            for (var i2 in room.elements) {
-                var e2 = room.elements[i2]
-                if (e2.subtractfrom==i) {
-                    if (e2.area!=undefined) {
-                        e2.A = e2.area
-                    } else {
-                        e2.A = e2.width * e2.height
-                    }
-                    e.A -= e2.A
-                }
-            }
-            
-            // Calculate: heat loss rate, deltaT and heat loss
-            e.uvalue = config.element_type[e.type].uvalue
-            e.wk = e.A * e.uvalue
             e.deltaT = room.temperature - e.temperature
-            e.heat = e.wk * e.deltaT
+            e.heat = WK * e.deltaT
                         
-            e.kwh = e.wk * config.degreedays * 0.024
+            e.kwh = WK * config.degreedays * 0.024
             if (e.boundary!='external' && e.boundary!='ground') e.kwh = 0
             
-            room.wk += e.wk
+            room.wk += WK
             room.heat += e.heat
             room.kwh += e.kwh
-            room.A += e.A
+            room.A += config.elements[e.id].A;
             
-            if (e.boundary=='external') config.house.wk += e.wk
-            else if (e.boundary=='unheated') config.house.wk += e.wk
-            else if (e.boundary=='ground') config.house.wk += e.wk
+            if (e.boundary=='external') config.house.wk += WK
+            else if (e.boundary=='unheated') config.house.wk += WK
+            else if (e.boundary=='ground') config.house.wk += WK
             else {
                 config.house.internal_heat_balance += e.heat  
             }    
@@ -420,7 +433,7 @@ function calculate() {
     }
     
     if (config.cop_calculation_method=="carnot") {
-        config.heatpump_COP = 0.49 * (config.heatpump_flow_temperature+4+273) / ((config.heatpump_flow_temperature+4+273)-(config.T.external-6+273));
+        config.heatpump_COP = 0.5 * (config.heatpump_flow_temperature+2+273) / ((config.heatpump_flow_temperature+2+273)-(config.T.external-6+273));
     } else {
         if (config.heatpump_capacity==undefined) config.heatpump_capacity = 5.0;
         config.heatpump_COP = get_ecodan_cop(config.heatpump_flow_temperature,config.T.external,(config.house.total_heat_output*0.001)/config.heatpump_capacity);
