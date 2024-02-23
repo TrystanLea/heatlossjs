@@ -123,12 +123,12 @@ function load_app() {
                 var e = config.rooms[roomName].elements[elementIndex]
                 
                 // Remove the base element
-                config.elements.splice(e.id,1)
+                config.elements[e.id] = false;
                 // Remove this element
-                config.rooms[roomName].elements.splice(elementIndex,1)  
+                config.rooms[roomName].elements[elementIndex] = false;
                 // Remove the linked room entry
                 if (e.link!=undefined) {
-                    config.rooms[e.boundary].elements.splice(e.link,1)
+                    config.rooms[e.boundary].elements[e.link] = false;
                 }
                          
                 calculate();
@@ -143,7 +143,7 @@ function load_app() {
                 // Remove linked element from original boundary
                 if (o.boundary != "external" && o.boundary != "unheated" && o.boundary != "ground") {  
                     if (e.link!=undefined) {
-                        config.rooms[o.boundary].elements.splice(e.link,1)
+                        config.rooms[o.boundary].elements[e.link] = false;
                     }
                 }
 
@@ -281,6 +281,7 @@ function calculate() {
     // Pre calculate elements
     for (var z in config.elements) {
         var e = config.elements[z];
+        if (e == false) continue;
 
         if (e.orientation==undefined) e.orientation = "";
 
@@ -295,6 +296,8 @@ function calculate() {
         // Subtract windows and doors from wall and floor elements
         for (var i2 in config.elements) {
             var e2 = config.elements[i2]
+            if (e2 == false) continue;
+            
             if (e2.subtractfrom==z) {
                 if (e2.area!=undefined) {
                     e2.A = e2.area
@@ -321,6 +324,8 @@ function calculate() {
         
         for (var i in room.elements) {
             var e = room.elements[i]
+            if (e == false) continue;
+            
             var WK = config.elements[e.id].wk;
             
             // Boundary temperature
@@ -481,6 +486,11 @@ function open_file(e) {
                 for (var z in tmp.rooms[room].elements) {
                 
                     let e = tmp.rooms[room].elements[z]
+                    if (e == false) {
+                        tmp.elements.push(false)
+                        tmp.rooms[room].elements[z] = false;
+                        continue;
+                    }
                     
                     let new_element = {
                         type: e.type,

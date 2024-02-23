@@ -148,7 +148,7 @@
           <th>ID</th>
           <th width="200px">Type</th>
           <th>Boundary</th>
-          <th></th>
+          <th width="40px">Sub</th>
           <th width="100px">Orientation</th>
           <th width="50px">Width</th>
           <th width="50px">Height</th>
@@ -156,8 +156,8 @@
           <th>U-value</th>
           <th>Heat loss</th>
         </tr>
-        <tr v-for="(element,elementIndex) in room.elements">
-          <td>{{ element.id }}</td>
+        <tr v-for="(element,elementIndex) in room.elements" v-if="element!==false">
+          <td>E{{ element.id + 1 }}</td>
           <td>
             <select v-model="elements[element.id].type" @change="update" @focus="focus">
               <option v-for="(type,element_name) in element_type">{{ element_name }}</option>
@@ -172,7 +172,7 @@
           <td>
             <select v-model="elements[element.id].subtractfrom" @change="update" @focus="focus">
               <option></option>
-              <option v-for="(sub_element,key) in room.elements" v-if="sub_element.id!=element.id">{{ sub_element.id }}</option>
+              <option v-for="(sub_element,key) in room.elements" v-if="sub_element!==false && sub_element.id!=element.id" :value="sub_element.id">E{{ sub_element.id + 1 }}</option>
             </select>
           </td>
           <td><input type="text" v-model="elements[element.id].orientation" @change="update" @focus="focus"/></td>
