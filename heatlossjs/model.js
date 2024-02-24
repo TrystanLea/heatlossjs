@@ -3,7 +3,6 @@ var heatlossjs_version = 3;
 // =========================================
 
 var template = "";
-var config = config_new;
 
 calculate();
 
@@ -505,11 +504,36 @@ function open_file(e) {
                             new_element.subtractfrom = e2.id;
                         }
                     }
-                
-                    tmp.elements.push(new_element);
                     
+                    // Auto link
+                    var link_element_exists = false;
+                    var link_element_id = false;
+                    if (e.boundary != "external" && e.boundary != "unheated" && e.boundary != "ground") {
+                        for (var x in tmp.rooms[e.boundary].elements) {
+                            let le = tmp.rooms[e.boundary].elements[x];
+                            if (le.boundary != undefined && le.boundary == room) {
+                                if (le.id != undefined) {
+                                    link_element_exists = true;
+                                    link_element_id = le.id;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    
+                    var element_id = false;
+                    if (!link_element_exists) {
+                        // Create new element
+                        tmp.elements.push(new_element);
+                        element_id = tmp.elements.length - 1;
+                    } else {
+                        element_id = link_element_id;
+                        tmp.elements[element_id].orientation = '';
+                    }
+                    
+                    // Overwrite with elements reference
                     tmp.rooms[room].elements[z] = {
-                        id: tmp.elements.length - 1,
+                        id: element_id,
                         boundary: e.boundary 
                     }
                 }

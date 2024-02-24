@@ -1,4 +1,8 @@
-<?php $v = time(); ?>
+<?php 
+    $v = time(); 
+    $example = file_get_contents("files/midterrace.json");
+
+?>
 <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
 
@@ -32,8 +36,12 @@
     </div>
   </div>
 </body>
-<script type="text/javascript" src="heatlossjs/ecodan.js?v=<?php echo $v; ?>"></script>
 
-<script> var cachev = <?php echo $v; ?>; </script>
+<script> 
+var cachev = <?php echo $v; ?>; 
+var config = <?php echo $example; ?>;
+</script>
+
+<script type="text/javascript" src="heatlossjs/ecodan.js?v=<?php echo $v; ?>"></script>
 <script type="text/javascript" src="heatlossjs/model.js?v=<?php echo $v; ?>"></script>
 
