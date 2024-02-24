@@ -1,6 +1,6 @@
 <?php 
     $v = time(); 
-    $example = file_get_contents("files/midterrace.json");
+    $example = file_get_contents("files/midterrace.json?v=2");
 
 ?>
 <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
