@@ -478,66 +478,7 @@ function open_file(e) {
         // Translate old formats
         if (tmp.elements == undefined) {
             alert("old format, attempting conversion...");
-            
-            tmp.elements = [];
-            
-            for (var room in tmp.rooms) {
-                for (var z in tmp.rooms[room].elements) {
-                
-                    let e = tmp.rooms[room].elements[z]
-                    if (e == false) {
-                        tmp.elements.push(false)
-                        tmp.rooms[room].elements[z] = false;
-                        continue;
-                    }
-                    
-                    let new_element = {
-                        type: e.type,
-                        orientation: e.orientation,
-                        width: e.width,
-                        height: e.height
-                    };
-                    
-                    if (e.subtractfrom != undefined && tmp.rooms[room].elements[e.subtractfrom] != undefined) {
-                        let e2 = tmp.rooms[room].elements[e.subtractfrom];
-                        if (e2.id != undefined) {
-                            new_element.subtractfrom = e2.id;
-                        }
-                    }
-                    
-                    // Auto link
-                    var link_element_exists = false;
-                    var link_element_id = false;
-                    if (e.boundary != "external" && e.boundary != "unheated" && e.boundary != "ground") {
-                        for (var x in tmp.rooms[e.boundary].elements) {
-                            let le = tmp.rooms[e.boundary].elements[x];
-                            if (le.boundary != undefined && le.boundary == room) {
-                                if (le.id != undefined) {
-                                    link_element_exists = true;
-                                    link_element_id = le.id;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    
-                    var element_id = false;
-                    if (!link_element_exists) {
-                        // Create new element
-                        tmp.elements.push(new_element);
-                        element_id = tmp.elements.length - 1;
-                    } else {
-                        element_id = link_element_id;
-                        tmp.elements[element_id].orientation = '';
-                    }
-                    
-                    // Overwrite with elements reference
-                    tmp.rooms[room].elements[z] = {
-                        id: element_id,
-                        boundary: e.boundary 
-                    }
-                }
-            }
+            tmp = upgrade_file(tmp);
         }
         
 
@@ -563,5 +504,76 @@ function download_data(filename, data) {
         elem.click();        
         document.body.removeChild(elem);
     }
+}
+
+function upgrade_file(tmp) {
+
+    tmp.elements = [];
+    
+    for (var room in tmp.rooms) {
+        for (var z in tmp.rooms[room].elements) {
+        
+            let e = tmp.rooms[room].elements[z]
+            if (e == false) {
+                tmp.elements.push(false)
+                tmp.rooms[room].elements[z] = false;
+                continue;
+            }
+            
+            let new_element = {
+                type: e.type,
+                orientation: e.orientation,
+                width: e.width,
+                height: e.height
+            };
+            
+            if (e.subtractfrom != undefined && tmp.rooms[room].elements[e.subtractfrom] != undefined) {
+                let e2 = tmp.rooms[room].elements[e.subtractfrom];
+                if (e2.id != undefined) {
+                    new_element.subtractfrom = e2.id;
+                }
+            }
+            
+            // Auto link
+            var link_element_exists = false;
+            var link_element_id = false;
+            if (e.boundary != "external" && e.boundary != "unheated" && e.boundary != "ground") {
+                for (var x in tmp.rooms[e.boundary].elements) {
+                    let le = tmp.rooms[e.boundary].elements[x];
+                    if (le.boundary != undefined && le.boundary == room) {
+                        if (le.id != undefined) {
+                            var match = true;
+                            if (tmp.elements[le.id].width != e.width) match = false;
+                            if (tmp.elements[le.id].height != e.height) match = false;
+                            if (tmp.elements[le.id].type != e.type) match = false;
+                            if (match) {
+                                link_element_exists = true;
+                                link_element_id = le.id;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            
+            var element_id = false;
+            if (!link_element_exists) {
+                // Create new element
+                tmp.elements.push(new_element);
+                element_id = tmp.elements.length - 1;
+            } else {
+                element_id = link_element_id;
+                tmp.elements[element_id].orientation = '';
+            }
+            
+            // Overwrite with elements reference
+            tmp.rooms[room].elements[z] = {
+                id: element_id,
+                boundary: e.boundary 
+            }
+        }
+    }
+    
+    return tmp;
 }
 
