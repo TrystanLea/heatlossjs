@@ -1,0 +1,567 @@
+{
+  "project_name": "bothylab",
+  "degreedays": 2228,
+  "heating_MWT": 38,
+  "T": {
+    "external": -3,
+    "ground": 10,
+    "unheated": 10
+  },
+  "element_type": {
+    "Ground Floor": {
+      "uvalue": 0.7
+    },
+    "Insulated Roof": {
+      "uvalue": 0.5
+    },
+    "Stone Wall 0.85m": {
+      "uvalue": 1.3
+    },
+    "Stone Wall 0.65m": {
+      "uvalue": 1.7
+    },
+    "Timber Frame Wall": {
+      "uvalue": 0.6
+    },
+    "Secondary Glazing": {
+      "uvalue": 2.8
+    },
+    "Double Glazing": {
+      "uvalue": 2.8
+    },
+    "Door": {
+      "uvalue": 2.8
+    }
+  },
+  "rooms": {
+    "Old Bothy": {
+      "temperature": 20,
+      "area": 21.04,
+      "height": 3.36,
+      "air_change_an_hour": 0.75,
+      "elements": [
+        {
+          "id": 0,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 23,
+          "heat": 283.61943999999994,
+          "kwh": 659.3782041599999
+        },
+        {
+          "id": 1,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 23,
+          "heat": 385.27943999999997,
+          "kwh": 895.72444416
+        },
+        {
+          "id": 2,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 23,
+          "heat": 658.0391999999999,
+          "kwh": 1529.8553088
+        },
+        {
+          "id": 3,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 23,
+          "heat": 119.60000000000001,
+          "kwh": 278.0544
+        },
+        {
+          "id": 4,
+          "boundary": "New Bothy",
+          "temperature": 20,
+          "deltaT": 0,
+          "heat": 0,
+          "kwh": 0
+        },
+        {
+          "id": 5,
+          "boundary": "ground",
+          "temperature": 10,
+          "deltaT": 10,
+          "heat": 147.27999999999997,
+          "kwh": 787.5356159999999
+        },
+        {
+          "id": 6,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 23,
+          "heat": 294.28499999999997,
+          "kwh": 684.1742399999999
+        },
+        {
+          "id": 7,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 23,
+          "heat": 57.96,
+          "kwh": 134.74944000000002
+        },
+        {
+          "id": 8,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 23,
+          "heat": 57.96,
+          "kwh": 134.74944000000002
+        },
+        {
+          "id": 9,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 23,
+          "heat": 103.03999999999999,
+          "kwh": 239.55455999999998
+        },
+        {
+          "id": 10,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 23,
+          "heat": 32.844,
+          "kwh": 76.35801599999999
+        },
+        {
+          "id": 11,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 23,
+          "heat": 48.943999999999996,
+          "kwh": 113.78841599999998
+        }
+      ],
+      "radiators": [
+        {
+          "name": "Double Panel Convector 1000x500",
+          "heat50k": 1528,
+          "model": "pow",
+          "heat": 404.8709393036337
+        },
+        {
+          "name": "Double Panel Convector 1000x500",
+          "heat50k": 1528,
+          "model": "pow",
+          "heat": 404.8709393036337
+        },
+        {
+          "name": "Double Panel Convector 1200x700",
+          "heat50k": 2407,
+          "model": "pow",
+          "heat": 637.7777165601088
+        },
+        {
+          "name": "Dimplex SmartRad SRX180 Fan:3, 300L/h",
+          "model": "linear",
+          "m": 102.34,
+          "c": -2104.1,
+          "heat50k": 1000,
+          "heat": 1784.8200000000002
+        }
+      ],
+      "wk": 133.07882399999997,
+      "heat": 2591.2789519999997,
+      "kwh": 6469.514396928,
+      "A": 108.97920000000002,
+      "volume": 70.69439999999999,
+      "infiltration_heat": 402.42787199999987,
+      "total_radiator_output": 3232.3395951673765,
+      "total_ufh_output": 0,
+      "ufh": [],
+      "total_heat_output": 3232.3395951673765,
+      "energy": 1016.2874048239305
+    },
+    "New Bothy": {
+      "temperature": 20,
+      "area": 20.5,
+      "height": 2.7,
+      "air_change_an_hour": 0.75,
+      "elements": [
+        {
+          "id": 12,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 23,
+          "heat": 471.48344,
+          "kwh": 1096.13750016
+        },
+        {
+          "id": 13,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 23,
+          "heat": 503.8269599999999,
+          "kwh": 1171.3319654399997
+        },
+        {
+          "id": 4,
+          "boundary": "Old Bothy",
+          "temperature": 20,
+          "deltaT": 0,
+          "heat": 0,
+          "kwh": 0
+        },
+        {
+          "id": 14,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 23,
+          "heat": 102.74100000000003,
+          "kwh": 238.85942400000008
+        },
+        {
+          "id": 15,
+          "boundary": "ground",
+          "temperature": 10,
+          "deltaT": 10,
+          "heat": 143.5,
+          "kwh": 767.3232
+        },
+        {
+          "id": 16,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 23,
+          "heat": 299.46,
+          "kwh": 696.20544
+        },
+        {
+          "id": 17,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 23,
+          "heat": 53.27167999999999,
+          "kwh": 123.84970751999998
+        },
+        {
+          "id": 18,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 23,
+          "heat": 103.03999999999999,
+          "kwh": 239.55455999999998
+        },
+        {
+          "id": 19,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 23,
+          "heat": 65.688,
+          "kwh": 152.71603199999998
+        },
+        {
+          "id": 20,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 23,
+          "heat": 56.672,
+          "kwh": 131.755008
+        },
+        {
+          "id": 21,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 23,
+          "heat": 23.828,
+          "kwh": 55.396992000000004
+        },
+        {
+          "id": 22,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 23,
+          "heat": 23.828,
+          "kwh": 55.396992000000004
+        }
+      ],
+      "radiators": [
+        {
+          "name": "Double Panel Convector 1200x600",
+          "heat50k": 2146,
+          "model": "pow",
+          "heat": 568.6210966921452
+        },
+        {
+          "name": "Double Panel Convector 1200x600",
+          "heat50k": 2146,
+          "model": "pow",
+          "heat": 568.6210966921452
+        },
+        {
+          "name": "Double Panel Convector 1200x600",
+          "heat50k": 2146,
+          "model": "pow",
+          "heat": 568.6210966921452
+        }
+      ],
+      "wk": 114.21908499999998,
+      "heat": 2162.418955,
+      "kwh": 5461.04643312,
+      "A": 93.2962,
+      "volume": 55.35,
+      "infiltration_heat": 315.079875,
+      "total_radiator_output": 1705.8632900764355,
+      "total_ufh_output": 0,
+      "ufh": [],
+      "total_heat_output": 1705.8632900764355,
+      "energy": 874.009096329231
+    }
+  },
+  "elements": [
+    {
+      "type": "Stone Wall 0.85m",
+      "orientation": "Front",
+      "width": 5.46,
+      "height": 2.36,
+      "A": 9.485599999999998,
+      "uvalue": 1.3,
+      "wk": 12.331279999999998
+    },
+    {
+      "type": "Stone Wall 0.85m",
+      "orientation": "Back",
+      "width": 5.46,
+      "height": 2.36,
+      "A": 12.885599999999998,
+      "uvalue": 1.3,
+      "wk": 16.751279999999998
+    },
+    {
+      "type": "Stone Wall 0.85m",
+      "orientation": "Left",
+      "width": 6.55,
+      "height": 3.36,
+      "A": 22.008,
+      "uvalue": 1.3,
+      "wk": 28.6104
+    },
+    {
+      "type": "Stone Wall 0.85m",
+      "orientation": "Right External",
+      "area": 4,
+      "A": 4,
+      "width": 0,
+      "height": 0,
+      "uvalue": 1.3,
+      "wk": 5.2
+    },
+    {
+      "type": "Stone Wall 0.85m",
+      "orientation": "",
+      "area": 9.3,
+      "A": 9.3,
+      "width": 0,
+      "height": 0,
+      "uvalue": 1.3,
+      "wk": 12.090000000000002
+    },
+    {
+      "type": "Ground Floor",
+      "orientation": "",
+      "area": 21.04,
+      "A": 21.04,
+      "width": 0,
+      "height": 0,
+      "uvalue": 0.7,
+      "wk": 14.727999999999998
+    },
+    {
+      "type": "Insulated Roof",
+      "orientation": "",
+      "area": 26.86,
+      "A": 25.589999999999996,
+      "width": 0,
+      "height": 0,
+      "uvalue": 0.5,
+      "wk": 12.794999999999998
+    },
+    {
+      "type": "Secondary Glazing",
+      "orientation": "SouthEast",
+      "area": 0.9,
+      "subtractfrom": 0,
+      "A": 0.9,
+      "width": 0,
+      "height": 0,
+      "uvalue": 2.8,
+      "wk": 2.52
+    },
+    {
+      "type": "Secondary Glazing",
+      "orientation": "SouthEast",
+      "area": 0.9,
+      "subtractfrom": 0,
+      "A": 0.9,
+      "width": 0,
+      "height": 0,
+      "uvalue": 2.8,
+      "wk": 2.52
+    },
+    {
+      "type": "Door",
+      "orientation": "SouthEast",
+      "area": 1.6,
+      "subtractfrom": 0,
+      "A": 1.6,
+      "width": 0,
+      "height": 0,
+      "uvalue": 2.8,
+      "wk": 4.4799999999999995
+    },
+    {
+      "type": "Double Glazing",
+      "orientation": "SouthEast",
+      "area": 0.51,
+      "subtractfrom": 6,
+      "A": 0.51,
+      "width": 0,
+      "height": 0,
+      "uvalue": 2.8,
+      "wk": 1.428
+    },
+    {
+      "type": "Double Glazing",
+      "orientation": "NorthWest",
+      "area": 0.76,
+      "subtractfrom": 6,
+      "A": 0.76,
+      "width": 0,
+      "height": 0,
+      "uvalue": 2.8,
+      "wk": 2.1279999999999997
+    },
+    {
+      "type": "Stone Wall 0.65m",
+      "orientation": "Front",
+      "width": 5.46,
+      "height": 2.36,
+      "A": 12.058399999999999,
+      "uvalue": 1.7,
+      "wk": 20.49928
+    },
+    {
+      "type": "Stone Wall 0.65m",
+      "orientation": "Back",
+      "width": 5.46,
+      "height": 2.36,
+      "A": 12.885599999999998,
+      "uvalue": 1.7,
+      "wk": 21.905519999999996
+    },
+    {
+      "type": "Timber Frame Wall",
+      "orientation": "Right",
+      "width": 3.35,
+      "height": 2.7,
+      "A": 7.445000000000002,
+      "uvalue": 0.6,
+      "wk": 4.467000000000001
+    },
+    {
+      "type": "Ground Floor",
+      "orientation": "",
+      "area": 20.5,
+      "A": 20.5,
+      "width": 0,
+      "height": 0,
+      "uvalue": 0.7,
+      "wk": 14.35
+    },
+    {
+      "type": "Insulated Roof",
+      "orientation": "",
+      "area": 28.68,
+      "A": 26.04,
+      "width": 0,
+      "height": 0,
+      "uvalue": 0.5,
+      "wk": 13.02
+    },
+    {
+      "type": "Secondary Glazing",
+      "orientation": "SouthEast",
+      "width": 0.88,
+      "height": 0.94,
+      "subtractfrom": 12,
+      "A": 0.8271999999999999,
+      "uvalue": 2.8,
+      "wk": 2.3161599999999996
+    },
+    {
+      "type": "Door",
+      "orientation": "",
+      "area": 1.6,
+      "subtractfrom": 14,
+      "A": 1.6,
+      "width": 0,
+      "height": 0,
+      "uvalue": 2.8,
+      "wk": 4.4799999999999995
+    },
+    {
+      "type": "Double Glazing",
+      "orientation": "SouthEast",
+      "area": 1.02,
+      "subtractfrom": 16,
+      "A": 1.02,
+      "width": 0,
+      "height": 0,
+      "uvalue": 2.8,
+      "wk": 2.856
+    },
+    {
+      "type": "Double Glazing",
+      "orientation": "NorthWest",
+      "area": 0.88,
+      "subtractfrom": 16,
+      "A": 0.88,
+      "width": 0,
+      "height": 0,
+      "uvalue": 2.8,
+      "wk": 2.464
+    },
+    {
+      "type": "Double Glazing",
+      "orientation": "SouthEast",
+      "area": 0.37,
+      "subtractfrom": 16,
+      "A": 0.37,
+      "width": 0,
+      "height": 0,
+      "uvalue": 2.8,
+      "wk": 1.036
+    },
+    {
+      "type": "Double Glazing",
+      "orientation": "NorthWest",
+      "area": 0.37,
+      "subtractfrom": 16,
+      "A": 0.37,
+      "width": 0,
+      "height": 0,
+      "uvalue": 2.8,
+      "wk": 1.036
+    }
+  ],
+  "solver_running": false,
+  "heatpump_flow_rate": 12,
+  "house": {
+    "heatloss": 4753.697907,
+    "kwh": 11930.560830048,
+    "total_heat_output": 4938.2028852438125,
+    "internal_heat_balance": 0,
+    "wk": null
+  },
+  "JK": 50,
+  "heatpump_flow_temperature": 40.97482101520711,
+  "cop_calculation_method": "ecodan",
+  "heatpump_capacity": 5,
+  "heatpump_COP": 2.837178201242208,
+  "heatpump_elec": 1740.533211160902
+}

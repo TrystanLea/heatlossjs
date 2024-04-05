@@ -1,0 +1,1429 @@
+{
+  "project_name": "mainhouse",
+  "degreedays": 1750,
+  "heating_MWT": 39.4,
+  "T": {
+    "external": -3,
+    "ground": 10,
+    "unheated": 10
+  },
+  "element_type": {
+    "Floor:Ground": {
+      "uvalue": 0.68
+    },
+    "Floor:First": {
+      "uvalue": 1.7
+    },
+    "Floor:Loft": {
+      "uvalue": 0.22
+    },
+    "Wall:External": {
+      "uvalue": 1.7
+    },
+    "Wall:ExternalIWI": {
+      "uvalue": 0.73
+    },
+    "Wall:Internal": {
+      "uvalue": 1.7
+    },
+    "Glazing:Secondary": {
+      "uvalue": 2.8
+    },
+    "Door:Front": {
+      "uvalue": 2.8
+    },
+    "Door:Back": {
+      "uvalue": 3.2
+    },
+    "Opening": {
+      "uvalue": 80
+    }
+  },
+  "rooms": {
+    "livingroom": {
+      "temperature": 21.540504956742733,
+      "width": 2.59,
+      "length": 5.43,
+      "height": 2.43,
+      "air_change_an_hour": 0.7,
+      "elements": [
+        {
+          "id": 0,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 24.54050121312785,
+          "heat": 89.67494245346447,
+          "kwh": 153.47476199999997
+        },
+        {
+          "id": 1,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 24.54050121312785,
+          "heat": 210.84190027719592,
+          "kwh": 360.8467380000001
+        },
+        {
+          "id": 2,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 24.54050121312785,
+          "heat": 95.26428700976648,
+          "kwh": 163.040682
+        },
+        false,
+        {
+          "id": 4,
+          "boundary": "ground",
+          "temperature": 10,
+          "deltaT": 11.54050121312785,
+          "heat": 110.36545989952499,
+          "kwh": 401.659272
+        },
+        false,
+        {
+          "id": 6,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 24.54050121312785,
+          "heat": 88.50286357502428,
+          "kwh": 151.4688
+        },
+        {
+          "id": 7,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 24.54050121312785,
+          "heat": 67.06428171523578,
+          "kwh": 114.77759999999999
+        },
+        {
+          "id": 8,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 24.54050121312785,
+          "heat": 48.97891394120909,
+          "kwh": 83.82528
+        },
+        {
+          "id": 9,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 24.54050121312785,
+          "heat": 48.97891394120909,
+          "kwh": 83.82528
+        },
+        {
+          "id": 60,
+          "boundary": "kitchen",
+          "temperature": 20.095587264989664,
+          "deltaT": 1.4449139481381863,
+          "heat": 32.41134159229054,
+          "kwh": 0,
+          "link": 8
+        },
+        {
+          "id": 61,
+          "boundary": "bed1",
+          "temperature": 18.96605701451758,
+          "deltaT": 2.5744441986102693,
+          "heat": 61.55055848919191,
+          "kwh": 0,
+          "link": 8
+        },
+        {
+          "id": 64,
+          "link": 9,
+          "boundary": "larder&porch",
+          "temperature": 9.13647926909711,
+          "deltaT": 12.40402194403074,
+          "heat": 62.0016277274571,
+          "kwh": 0
+        },
+        {
+          "id": 70,
+          "link": 9,
+          "boundary": "bed3",
+          "temperature": 20.08605522863306,
+          "deltaT": 1.4544459844947895,
+          "heat": 16.330010457812918,
+          "kwh": 0
+        }
+      ],
+      "radiators": [
+        {
+          "name": "Double Panel Convector 1200x600",
+          "heat50k": 2146,
+          "model": "pow",
+          "heat": 562.8578903261916
+        },
+        {
+          "name": "Double Panel Convector 1200x600",
+          "heat50k": 2146,
+          "model": "pow",
+          "heat": 562.8578903261916
+        }
+      ],
+      "ufh": [],
+      "wk": 106.48202372099999,
+      "heat": 1125.697062577971,
+      "kwh": 1844.4822362820003,
+      "A": 76.64939999999999,
+      "area": 14.063699999999999,
+      "volume": 34.174791,
+      "infiltration_heat": 193.73196149858876,
+      "total_radiator_output": 1125.7157806523833,
+      "total_ufh_output": 0,
+      "total_heat_output": 1125.7157806523833,
+      "energy": 1077.0252478371367
+    },
+    "kitchen": {
+      "temperature": 20.09559498495129,
+      "width": 4.25,
+      "length": 4.18,
+      "height": 2.43,
+      "air_change_an_hour": 0.7,
+      "elements": [
+        {
+          "id": 10,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 23.095587264989664,
+          "heat": 115.8856889181117,
+          "kwh": 210.74151
+        },
+        {
+          "id": 11,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 23.095587264989664,
+          "heat": 171.25151620234635,
+          "kwh": 311.42588399999994
+        },
+        false,
+        false,
+        {
+          "id": 14,
+          "boundary": "ground",
+          "temperature": 10,
+          "deltaT": 10.095587264989664,
+          "heat": 121.95671327852816,
+          "kwh": 507.36840000000007
+        },
+        false,
+        {
+          "id": 16,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 23.095587264989664,
+          "heat": 83.29192591245872,
+          "kwh": 151.4688
+        },
+        {
+          "id": 17,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 23.095587264989664,
+          "heat": 140.07011764470928,
+          "kwh": 254.72159999999997
+        },
+        {
+          "id": 60,
+          "link": 10,
+          "boundary": "livingroom",
+          "temperature": 21.54050121312785,
+          "deltaT": -1.4449139481381863,
+          "heat": -32.41134159229054,
+          "kwh": 0
+        },
+        {
+          "id": 62,
+          "boundary": "larder&porch",
+          "temperature": 9.13647926909711,
+          "deltaT": 10.959107995892554,
+          "heat": 192.40631930688662,
+          "kwh": 0,
+          "link": 8
+        },
+        {
+          "id": 63,
+          "boundary": "bed2",
+          "temperature": 19.334661274295332,
+          "deltaT": 0.7609259906943322,
+          "heat": 22.98034538196418,
+          "kwh": 0,
+          "link": 7
+        },
+        {
+          "id": 73,
+          "link": 10,
+          "boundary": "landing",
+          "temperature": 19.70472928597098,
+          "deltaT": 0.39085797901868347,
+          "heat": 3.456513451653825,
+          "kwh": 0
+        },
+        {
+          "id": 74,
+          "link": 10,
+          "boundary": "bathroom",
+          "temperature": 19.616430141637423,
+          "deltaT": 0.47915712335224114,
+          "heat": 4.924221091551245,
+          "kwh": 0
+        },
+        {
+          "id": 75,
+          "boundary": "landing",
+          "temperature": 19.70472928597098,
+          "deltaT": 0.39085797901868347,
+          "heat": 191.36406652754744,
+          "kwh": 0,
+          "link": 11
+        }
+      ],
+      "radiators": [
+        {
+          "name": "Double Panel Convector 1200x600",
+          "heat50k": 2146,
+          "model": "pow",
+          "heat": 622.7622580559816
+        },
+        {
+          "name": "Double Panel Convector 1200x600",
+          "heat50k": 2146,
+          "model": "pow",
+          "heat": 622.7622580559816
+        }
+      ],
+      "ufh": [],
+      "wk": 623.0648044500001,
+      "heat": 1245.485916303814,
+      "kwh": 1854.5513468999998,
+      "A": 96.9045,
+      "area": 17.765,
+      "volume": 43.16895,
+      "infiltration_heat": 230.30983018034738,
+      "total_radiator_output": 1245.5245161119633,
+      "total_ufh_output": 0,
+      "total_heat_output": 1245.5245161119633,
+      "energy": 1004.7797492475646
+    },
+    "larder&porch": {
+      "temperature": 9.13649640034066,
+      "width": 4.27,
+      "length": 1.21,
+      "height": 2.43,
+      "air_change_an_hour": 0.7,
+      "elements": [
+        {
+          "id": 18,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 12.13647926909711,
+          "heat": 153.09161270186664,
+          "kwh": 529.7951399999998
+        },
+        {
+          "id": 19,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 12.13647926909711,
+          "heat": 60.6643129913746,
+          "kwh": 209.93742
+        },
+        {
+          "id": 20,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 12.13647926909711,
+          "heat": 33.16657054658858,
+          "kwh": 114.77759999999999
+        },
+        {
+          "id": 21,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 12.13647926909711,
+          "heat": 67.28464106787439,
+          "kwh": 232.848
+        },
+        false,
+        false,
+        {
+          "id": 23,
+          "boundary": "ground",
+          "temperature": 10,
+          "deltaT": -0.8635207309028896,
+          "heat": -3.0338557410420526,
+          "kwh": 147.560952
+        },
+        false,
+        {
+          "id": 62,
+          "link": 9,
+          "boundary": "kitchen",
+          "temperature": 20.095587264989664,
+          "deltaT": -10.959107995892554,
+          "heat": -192.40631930688662,
+          "kwh": 0
+        },
+        {
+          "id": 64,
+          "boundary": "livingroom",
+          "temperature": 21.54050121312785,
+          "deltaT": -12.40402194403074,
+          "heat": -62.0016277274571,
+          "kwh": 0,
+          "link": 12
+        },
+        {
+          "id": 65,
+          "boundary": "bathroom",
+          "temperature": 19.616430141637423,
+          "deltaT": -10.479950872540313,
+          "heat": -92.04949569436184,
+          "kwh": 0,
+          "link": 7
+        }
+      ],
+      "ufh": [],
+      "wk": 63.641709711000004,
+      "heat": -0.0856562177479816,
+      "kwh": 1356.7285078619998,
+      "A": 36.9176,
+      "area": 5.1667,
+      "volume": 12.555081,
+      "infiltration_heat": 35.19850494429539,
+      "total_radiator_output": 0,
+      "radiators": [],
+      "total_ufh_output": 0,
+      "total_heat_output": 0,
+      "energy": 456.824820017033
+    },
+    "bed1": {
+      "temperature": 18.966063507713017,
+      "width": 4.24,
+      "length": 2.74,
+      "height": 2.34,
+      "air_change_an_hour": 0.7,
+      "elements": [
+        {
+          "id": 25,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 21.96605701451758,
+          "heat": 120.91839919660413,
+          "kwh": 231.20092799999995
+        },
+        false,
+        false,
+        {
+          "id": 28,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 21.96605701451758,
+          "heat": 102.81142694262508,
+          "kwh": 196.579656
+        },
+        false,
+        {
+          "id": 30,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 21.96605701451758,
+          "heat": 58.26101234074528,
+          "kwh": 111.39744000000002
+        },
+        {
+          "id": 31,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 21.96605701451758,
+          "heat": 73.21550395622883,
+          "kwh": 139.99103999999997
+        },
+        {
+          "id": 32,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 21.96605701451758,
+          "heat": 73.21550395622883,
+          "kwh": 139.99103999999997
+        },
+        {
+          "id": 61,
+          "link": 11,
+          "boundary": "livingroom",
+          "temperature": 21.54050121312785,
+          "deltaT": -2.5744441986102693,
+          "heat": -61.55055848919191,
+          "kwh": 0
+        },
+        {
+          "id": 66,
+          "boundary": "bed2",
+          "temperature": 19.334661274295332,
+          "deltaT": -0.3686042597777508,
+          "heat": -4.017683222384746,
+          "kwh": 0,
+          "link": 8
+        },
+        {
+          "id": 67,
+          "boundary": "bed3",
+          "temperature": 20.08605522863306,
+          "deltaT": -1.1199982141154798,
+          "heat": -18.890696277985846,
+          "kwh": 0,
+          "link": 7
+        },
+        {
+          "id": 71,
+          "link": 8,
+          "boundary": "landing",
+          "temperature": 19.70472928597098,
+          "deltaT": -0.7386722714533995,
+          "heat": -4.4958105926376835,
+          "kwh": 0
+        }
+      ],
+      "radiators": [
+        {
+          "name": "Double Panel Convector 1200x400",
+          "heat50k": 1528,
+          "model": "pow",
+          "heat": 477.44151447874094
+        }
+      ],
+      "ufh": [],
+      "wk": 83.544659504,
+      "heat": 477.40904850158086,
+      "kwh": 1082.910759168,
+      "A": 62.366299999999995,
+      "area": 11.617600000000001,
+      "volume": 27.185184,
+      "infiltration_heat": 137.9419506913489,
+      "total_radiator_output": 477.44151447874094,
+      "total_ufh_output": 0,
+      "total_heat_output": 477.44151447874094,
+      "energy": 948.3031753856508
+    },
+    "bed2": {
+      "temperature": 19.334671423921282,
+      "width": 2.54,
+      "length": 2.92,
+      "height": 2.34,
+      "air_change_an_hour": 0.7,
+      "elements": [
+        {
+          "id": 33,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 22.334661274295332,
+          "heat": 77.49761173735581,
+          "kwh": 145.73311199999998
+        },
+        {
+          "id": 34,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 22.334661274295332,
+          "heat": 111.40403969515374,
+          "kwh": 209.493648
+        },
+        false,
+        false,
+        false,
+        {
+          "id": 37,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 22.334661274295332,
+          "heat": 59.238668791039004,
+          "kwh": 111.39744000000002
+        },
+        {
+          "id": 38,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 22.334661274295332,
+          "heat": 74.44410618657925,
+          "kwh": 139.99103999999997
+        },
+        {
+          "id": 63,
+          "link": 10,
+          "boundary": "kitchen",
+          "temperature": 20.095587264989664,
+          "deltaT": -0.7609259906943322,
+          "heat": -22.98034538196418,
+          "kwh": 0
+        },
+        {
+          "id": 66,
+          "link": 9,
+          "boundary": "bed1",
+          "temperature": 18.96605701451758,
+          "deltaT": 0.3686042597777508,
+          "heat": 4.017683222384746,
+          "kwh": 0
+        },
+        {
+          "id": 68,
+          "boundary": "bathroom",
+          "temperature": 19.616430141637423,
+          "deltaT": -0.28176886734209106,
+          "heat": -4.752516590176194,
+          "kwh": 0,
+          "link": 8
+        }
+      ],
+      "radiators": [
+        {
+          "name": "Double Panel Convector 1000x400",
+          "heat50k": 1273,
+          "model": "pow",
+          "heat": 388.4613742157837
+        }
+      ],
+      "ufh": [],
+      "wk": 76.419237072,
+      "heat": 388.41062608603585,
+      "kwh": 774.9964770239999,
+      "A": 58.930600000000005,
+      "area": 7.4168,
+      "volume": 17.355311999999998,
+      "infiltration_heat": 89.54137842566371,
+      "total_radiator_output": 388.4613742157837,
+      "total_ufh_output": 0,
+      "total_heat_output": 388.4613742157837,
+      "energy": 966.7335711960642
+    },
+    "bed3": {
+      "temperature": 20.086064165997577,
+      "width": 2.59,
+      "length": 2.55,
+      "height": 2.34,
+      "air_change_an_hour": 0.7,
+      "elements": [
+        false,
+        false,
+        {
+          "id": 41,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 23.08605522863306,
+          "heat": 86.43643012335934,
+          "kwh": 157.25207399999996
+        },
+        {
+          "id": 42,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 23.08605522863306,
+          "heat": 100.56077883095503,
+          "kwh": 182.94822
+        },
+        false,
+        {
+          "id": 44,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 23.08605522863306,
+          "heat": 33.543807386651544,
+          "kwh": 61.02557999999999
+        },
+        {
+          "id": 45,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 23.08605522863306,
+          "heat": 60.225977438248776,
+          "kwh": 109.56792
+        },
+        {
+          "id": 67,
+          "link": 10,
+          "boundary": "bed1",
+          "temperature": 18.96605701451758,
+          "deltaT": 1.1199982141154798,
+          "heat": 18.890696277985846,
+          "kwh": 0
+        },
+        {
+          "id": 69,
+          "boundary": "landing",
+          "temperature": 19.70472928597098,
+          "deltaT": 0.3813259426620803,
+          "heat": 3.8681322297698757,
+          "kwh": 0,
+          "link": 7
+        },
+        {
+          "id": 70,
+          "boundary": "livingroom",
+          "temperature": 21.54050121312785,
+          "deltaT": -1.4544459844947895,
+          "heat": -16.330010457812918,
+          "kwh": 0,
+          "link": 13
+        }
+      ],
+      "radiators": [
+        {
+          "name": "Double Panel Convector 1000x400",
+          "heat50k": 1273,
+          "model": "pow",
+          "heat": 369.6576334007392
+        }
+      ],
+      "ufh": [],
+      "wk": 53.97002342999999,
+      "heat": 369.6129465781603,
+      "kwh": 660.73364406,
+      "A": 41.1252,
+      "area": 6.604499999999999,
+      "volume": 15.454529999999997,
+      "infiltration_heat": 82.41713474900284,
+      "total_radiator_output": 369.6576334007392,
+      "total_ufh_output": 0,
+      "total_heat_output": 369.6576334007392,
+      "energy": 1004.3032082998789
+    },
+    "landing": {
+      "temperature": 19.704737812091892,
+      "width": 1.53,
+      "length": 3.4,
+      "height": 2.34,
+      "air_change_an_hour": 0.7,
+      "elements": [
+        false,
+        false,
+        {
+          "id": 48,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 22.70472928597098,
+          "heat": 43.89743712514273,
+          "kwh": 81.20301
+        },
+        false,
+        false,
+        {
+          "id": 51,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 22.70472928597098,
+          "heat": 25.984200384036626,
+          "kwh": 48.06648
+        },
+        {
+          "id": 52,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 22.70472928597098,
+          "heat": 59.23118957206965,
+          "kwh": 109.56792
+        },
+        {
+          "id": 69,
+          "link": 8,
+          "boundary": "bed3",
+          "temperature": 20.08605522863306,
+          "deltaT": -0.3813259426620803,
+          "heat": -3.8681322297698757,
+          "kwh": 0
+        },
+        {
+          "id": 71,
+          "boundary": "bed1",
+          "temperature": 18.96605701451758,
+          "deltaT": 0.7386722714533995,
+          "heat": 4.4958105926376835,
+          "kwh": 0,
+          "link": 11
+        },
+        {
+          "id": 72,
+          "boundary": "bathroom",
+          "temperature": 19.616430141637423,
+          "deltaT": 0.08829914433355768,
+          "heat": 1.194263586940234,
+          "kwh": 0,
+          "link": 9
+        },
+        {
+          "id": 73,
+          "boundary": "kitchen",
+          "temperature": 20.095587264989664,
+          "deltaT": -0.39085797901868347,
+          "heat": -3.456513451653825,
+          "kwh": 0,
+          "link": 11
+        },
+        {
+          "id": 75,
+          "link": 13,
+          "boundary": "kitchen",
+          "temperature": 20.095587264989664,
+          "deltaT": -0.39085797901868347,
+          "heat": -191.36406652754744,
+          "kwh": 0
+        }
+      ],
+      "wk": 536.69733408,
+      "heat": -0.04263060456622014,
+      "kwh": 356.93675136,
+      "A": 37.6074,
+      "area": 5.202,
+      "volume": 12.17268,
+      "infiltration_heat": 63.84318034357799,
+      "total_radiator_output": 0,
+      "radiators": [],
+      "total_ufh_output": 0,
+      "ufh": [],
+      "total_heat_output": 0,
+      "energy": 985.2368906045947
+    },
+    "bathroom": {
+      "temperature": 19.616442422038673,
+      "width": 2.54,
+      "length": 2.38,
+      "height": 2.34,
+      "air_change_an_hour": 0.7,
+      "elements": [
+        false,
+        {
+          "id": 54,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 22.616430141637423,
+          "heat": 91.94745860370921,
+          "kwh": 170.75167199999999
+        },
+        {
+          "id": 55,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 22.616430141637423,
+          "heat": 82.74643894561699,
+          "kwh": 153.664854
+        },
+        false,
+        false,
+        {
+          "id": 58,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 22.616430141637423,
+          "heat": 30.078585568289835,
+          "kwh": 55.85764799999999
+        },
+        {
+          "id": 59,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 22.616430141637423,
+          "heat": 59.000838296298035,
+          "kwh": 109.56792
+        },
+        {
+          "id": 65,
+          "link": 10,
+          "boundary": "larder&porch",
+          "temperature": 9.13647926909711,
+          "deltaT": 10.479950872540313,
+          "heat": 92.04949569436184,
+          "kwh": 0
+        },
+        {
+          "id": 68,
+          "link": 9,
+          "boundary": "bed2",
+          "temperature": 19.334661274295332,
+          "deltaT": 0.28176886734209106,
+          "heat": 4.752516590176194,
+          "kwh": 0
+        },
+        {
+          "id": 72,
+          "link": 9,
+          "boundary": "landing",
+          "temperature": 19.70472928597098,
+          "deltaT": -0.08829914433355768,
+          "heat": -1.194263586940234,
+          "kwh": 0
+        },
+        {
+          "id": 74,
+          "boundary": "kitchen",
+          "temperature": 20.095587264989664,
+          "deltaT": -0.47915712335224114,
+          "heat": -4.924221091551245,
+          "kwh": 0,
+          "link": 12
+        }
+      ],
+      "radiators": [
+        {
+          "name": "Double Panel Convector 800x600",
+          "heat50k": 1430,
+          "model": "pow",
+          "heat": 428.42133576750837
+        }
+      ],
+      "ufh": [],
+      "wk": 64.382729408,
+      "heat": 428.3599337612487,
+      "kwh": 627.0843351359999,
+      "A": 46.6475,
+      "area": 6.0451999999999995,
+      "volume": 14.145767999999999,
+      "infiltration_heat": 73.90308474128813,
+      "total_radiator_output": 428.42133576750837,
+      "total_ufh_output": 0,
+      "total_heat_output": 428.42133576750837,
+      "energy": 980.8221211019337
+    }
+  },
+  "elements": [
+    {
+      "type": "Wall:ExternalIWI",
+      "orientation": "Front",
+      "width": 2.59,
+      "height": 2.43,
+      "A": 5.0057,
+      "uvalue": 0.73,
+      "wk": 3.6541609999999998
+    },
+    {
+      "type": "Wall:ExternalIWI",
+      "orientation": "Right",
+      "width": 5.43,
+      "height": 2.43,
+      "A": 11.769300000000001,
+      "uvalue": 0.73,
+      "wk": 8.591589
+    },
+    {
+      "type": "Wall:ExternalIWI",
+      "orientation": "Back",
+      "width": 2.59,
+      "height": 2.43,
+      "A": 5.3177,
+      "uvalue": 0.73,
+      "wk": 3.881921
+    },
+    false,
+    {
+      "type": "Floor:Ground",
+      "width": 2.59,
+      "height": 5.43,
+      "orientation": "",
+      "A": 14.063699999999999,
+      "uvalue": 0.68,
+      "wk": 9.563316
+    },
+    false,
+    {
+      "type": "Glazing:Secondary",
+      "width": 0.92,
+      "height": 1.4,
+      "subtractfrom": 0,
+      "A": 1.288,
+      "orientation": "",
+      "uvalue": 2.8,
+      "wk": 3.6064
+    },
+    {
+      "type": "Glazing:Secondary",
+      "width": 0.8,
+      "height": 1.22,
+      "subtractfrom": 2,
+      "A": 0.976,
+      "orientation": "",
+      "uvalue": 2.8,
+      "wk": 2.7327999999999997
+    },
+    {
+      "type": "Glazing:Secondary",
+      "width": 0.66,
+      "height": 1.08,
+      "subtractfrom": 1,
+      "A": 0.7128000000000001,
+      "orientation": "",
+      "uvalue": 2.8,
+      "wk": 1.99584
+    },
+    {
+      "type": "Glazing:Secondary",
+      "width": 0.66,
+      "height": 1.08,
+      "subtractfrom": 1,
+      "A": 0.7128000000000001,
+      "orientation": "",
+      "uvalue": 2.8,
+      "wk": 1.99584
+    },
+    {
+      "type": "Wall:ExternalIWI",
+      "orientation": "Front",
+      "width": 4.25,
+      "height": 2.43,
+      "A": 6.8735,
+      "uvalue": 0.73,
+      "wk": 5.0176549999999995
+    },
+    {
+      "type": "Wall:ExternalIWI",
+      "orientation": "Left",
+      "width": 4.18,
+      "height": 2.43,
+      "A": 10.157399999999999,
+      "uvalue": 0.73,
+      "wk": 7.414901999999999
+    },
+    false,
+    false,
+    {
+      "type": "Floor:Ground",
+      "width": 4.25,
+      "height": 4.18,
+      "orientation": "",
+      "A": 17.765,
+      "uvalue": 0.68,
+      "wk": 12.080200000000001
+    },
+    false,
+    {
+      "type": "Glazing:Secondary",
+      "width": 0.92,
+      "height": 1.4,
+      "subtractfrom": 10,
+      "A": 1.288,
+      "orientation": "",
+      "uvalue": 2.8,
+      "wk": 3.6064
+    },
+    {
+      "type": "Door:Front",
+      "width": 0.95,
+      "height": 2.28,
+      "subtractfrom": 10,
+      "A": 2.166,
+      "orientation": "",
+      "uvalue": 2.8,
+      "wk": 6.064799999999999
+    },
+    {
+      "type": "Wall:External",
+      "orientation": "Back",
+      "width": 4.27,
+      "height": 2.43,
+      "A": 7.420099999999998,
+      "uvalue": 1.7,
+      "wk": 12.614169999999996
+    },
+    {
+      "type": "Wall:External",
+      "orientation": "Left",
+      "width": 1.21,
+      "height": 2.43,
+      "A": 2.9403,
+      "uvalue": 1.7,
+      "wk": 4.9985100000000005
+    },
+    {
+      "type": "Glazing:Secondary",
+      "width": 0.8,
+      "height": 1.22,
+      "subtractfrom": 18,
+      "A": 0.976,
+      "orientation": "",
+      "uvalue": 2.8,
+      "wk": 2.7327999999999997
+    },
+    {
+      "type": "Door:Front",
+      "width": 0.9,
+      "height": 2.2,
+      "subtractfrom": 18,
+      "A": 1.9800000000000002,
+      "orientation": "",
+      "uvalue": 2.8,
+      "wk": 5.5440000000000005
+    },
+    false,
+    {
+      "type": "Floor:Ground",
+      "width": 4.27,
+      "height": 1.21,
+      "orientation": "",
+      "A": 5.1667,
+      "uvalue": 0.68,
+      "wk": 3.513356
+    },
+    false,
+    {
+      "type": "Wall:ExternalIWI",
+      "orientation": "Front",
+      "width": 4.24,
+      "height": 2.34,
+      "A": 7.540799999999999,
+      "uvalue": 0.73,
+      "wk": 5.504783999999999
+    },
+    false,
+    false,
+    {
+      "type": "Wall:ExternalIWI",
+      "orientation": "Right",
+      "width": 2.74,
+      "height": 2.34,
+      "A": 6.4116,
+      "uvalue": 0.73,
+      "wk": 4.680468
+    },
+    false,
+    {
+      "type": "Floor:Loft",
+      "width": 4.4,
+      "height": 2.74,
+      "orientation": "",
+      "A": 12.056000000000003,
+      "uvalue": 0.22,
+      "wk": 2.6523200000000005
+    },
+    {
+      "type": "Glazing:Secondary",
+      "width": 0.96,
+      "height": 1.24,
+      "subtractfrom": 25,
+      "A": 1.1904,
+      "orientation": "",
+      "uvalue": 2.8,
+      "wk": 3.3331199999999996
+    },
+    {
+      "type": "Glazing:Secondary",
+      "width": 0.96,
+      "height": 1.24,
+      "subtractfrom": 25,
+      "A": 1.1904,
+      "orientation": "",
+      "uvalue": 2.8,
+      "wk": 3.3331199999999996
+    },
+    {
+      "type": "Wall:ExternalIWI",
+      "orientation": "Front",
+      "width": 2.54,
+      "height": 2.34,
+      "A": 4.7532,
+      "uvalue": 0.73,
+      "wk": 3.4698359999999995
+    },
+    {
+      "type": "Wall:ExternalIWI",
+      "orientation": "Left",
+      "width": 2.92,
+      "height": 2.34,
+      "A": 6.8328,
+      "uvalue": 0.73,
+      "wk": 4.987944
+    },
+    false,
+    false,
+    {
+      "type": "Floor:Loft",
+      "width": 4.4,
+      "height": 2.74,
+      "orientation": "",
+      "A": 12.056000000000003,
+      "uvalue": 0.22,
+      "wk": 2.6523200000000005
+    },
+    {
+      "type": "Glazing:Secondary",
+      "width": 0.96,
+      "height": 1.24,
+      "subtractfrom": 33,
+      "A": 1.1904,
+      "orientation": "",
+      "uvalue": 2.8,
+      "wk": 3.3331199999999996
+    },
+    false,
+    false,
+    {
+      "type": "Wall:ExternalIWI",
+      "orientation": "Back",
+      "width": 2.59,
+      "height": 2.34,
+      "A": 5.128899999999999,
+      "uvalue": 0.73,
+      "wk": 3.744096999999999
+    },
+    {
+      "type": "Wall:ExternalIWI",
+      "orientation": "Right",
+      "width": 2.55,
+      "height": 2.34,
+      "A": 5.967,
+      "uvalue": 0.73,
+      "wk": 4.35591
+    },
+    false,
+    {
+      "type": "Floor:Loft",
+      "width": 2.59,
+      "height": 2.55,
+      "orientation": "",
+      "A": 6.604499999999999,
+      "uvalue": 0.22,
+      "wk": 1.4529899999999998
+    },
+    {
+      "type": "Glazing:Secondary",
+      "width": 0.77,
+      "height": 1.21,
+      "subtractfrom": 41,
+      "A": 0.9317,
+      "orientation": "",
+      "uvalue": 2.8,
+      "wk": 2.6087599999999997
+    },
+    false,
+    false,
+    {
+      "type": "Wall:ExternalIWI",
+      "orientation": "Back",
+      "width": 1.53,
+      "height": 2.34,
+      "A": 2.6485000000000003,
+      "uvalue": 0.73,
+      "wk": 1.9334050000000003
+    },
+    false,
+    false,
+    {
+      "type": "Floor:Loft",
+      "width": 1.53,
+      "height": 3.4,
+      "orientation": "",
+      "A": 5.202,
+      "uvalue": 0.22,
+      "wk": 1.14444
+    },
+    {
+      "type": "Glazing:Secondary",
+      "width": 0.77,
+      "height": 1.21,
+      "subtractfrom": 48,
+      "A": 0.9317,
+      "orientation": "",
+      "uvalue": 2.8,
+      "wk": 2.6087599999999997
+    },
+    false,
+    {
+      "type": "Wall:ExternalIWI",
+      "orientation": "Left",
+      "width": 2.38,
+      "height": 2.34,
+      "A": 5.5691999999999995,
+      "uvalue": 0.73,
+      "wk": 4.065516
+    },
+    {
+      "type": "Wall:ExternalIWI",
+      "orientation": "Back",
+      "width": 2.54,
+      "height": 2.34,
+      "A": 5.0119,
+      "uvalue": 0.73,
+      "wk": 3.6586869999999996
+    },
+    false,
+    false,
+    {
+      "type": "Floor:Loft",
+      "width": 2.54,
+      "height": 2.38,
+      "orientation": "",
+      "A": 6.0451999999999995,
+      "uvalue": 0.22,
+      "wk": 1.3299439999999998
+    },
+    {
+      "type": "Glazing:Secondary",
+      "width": 0.77,
+      "height": 1.21,
+      "subtractfrom": 55,
+      "A": 0.9317,
+      "orientation": "",
+      "uvalue": 2.8,
+      "wk": 2.6087599999999997
+    },
+    {
+      "type": "Wall:Internal",
+      "orientation": "",
+      "width": 5.43,
+      "height": 2.43,
+      "A": 13.1949,
+      "uvalue": 1.7,
+      "wk": 22.43133
+    },
+    {
+      "type": "Floor:First",
+      "orientation": "",
+      "width": 2.59,
+      "height": 5.43,
+      "A": 14.063699999999999,
+      "uvalue": 1.7,
+      "wk": 23.908289999999997
+    },
+    {
+      "type": "Wall:Internal",
+      "orientation": "",
+      "width": 4.25,
+      "height": 2.43,
+      "A": 10.3275,
+      "uvalue": 1.7,
+      "wk": 17.55675
+    },
+    {
+      "type": "Floor:First",
+      "orientation": "",
+      "width": 4.25,
+      "height": 4.18,
+      "A": 17.765,
+      "uvalue": 1.7,
+      "wk": 30.2005
+    },
+    {
+      "type": "Wall:Internal",
+      "orientation": "",
+      "width": 1.21,
+      "height": 2.43,
+      "A": 2.9403,
+      "uvalue": 1.7,
+      "wk": 4.9985100000000005
+    },
+    {
+      "type": "Floor:First",
+      "orientation": "",
+      "width": 4.27,
+      "height": 1.21,
+      "A": 5.1667,
+      "uvalue": 1.7,
+      "wk": 8.783389999999999
+    },
+    {
+      "type": "Wall:Internal",
+      "orientation": "",
+      "width": 2.74,
+      "height": 2.34,
+      "A": 6.4116,
+      "uvalue": 1.7,
+      "wk": 10.89972
+    },
+    {
+      "type": "Wall:Internal",
+      "orientation": "",
+      "width": 4.24,
+      "height": 2.34,
+      "A": 9.9216,
+      "uvalue": 1.7,
+      "wk": 16.86672
+    },
+    {
+      "type": "Wall:Internal",
+      "orientation": "",
+      "width": 4.24,
+      "height": 2.34,
+      "A": 9.9216,
+      "uvalue": 1.7,
+      "wk": 16.86672
+    },
+    {
+      "type": "Wall:Internal",
+      "orientation": "",
+      "width": 2.55,
+      "height": 2.34,
+      "A": 5.967,
+      "uvalue": 1.7,
+      "wk": 10.143899999999999
+    },
+    {
+      "type": "Floor:First",
+      "orientation": "",
+      "width": 2.59,
+      "height": 2.55,
+      "A": 6.604499999999999,
+      "uvalue": 1.7,
+      "wk": 11.227649999999997
+    },
+    {
+      "type": "Wall:Internal",
+      "orientation": "",
+      "width": 1.53,
+      "height": 2.34,
+      "A": 3.5802,
+      "uvalue": 1.7,
+      "wk": 6.08634
+    },
+    {
+      "type": "Wall:Internal",
+      "orientation": "",
+      "width": 3.4,
+      "height": 2.34,
+      "A": 7.9559999999999995,
+      "uvalue": 1.7,
+      "wk": 13.525199999999998
+    },
+    {
+      "type": "Floor:First",
+      "orientation": "",
+      "width": 1.53,
+      "height": 3.4,
+      "A": 5.202,
+      "uvalue": 1.7,
+      "wk": 8.843399999999999
+    },
+    {
+      "type": "Floor:First",
+      "orientation": "",
+      "width": 2.54,
+      "height": 2.38,
+      "A": 6.0451999999999995,
+      "uvalue": 1.7,
+      "wk": 10.276839999999998
+    },
+    {
+      "type": "Opening",
+      "orientation": "",
+      "width": 1.8,
+      "height": 3.4,
+      "A": 6.12,
+      "uvalue": 80,
+      "wk": 489.6
+    }
+  ],
+  "solver_running": false,
+  "heatpump_flow_rate": 12,
+  "house": {
+    "heatloss": 4034.847246986497,
+    "kwh": 8558.424057792,
+    "total_heat_output": 4035.2221546271185,
+    "internal_heat_balance": 2.7533531010703882e-14,
+    "wk": null
+  },
+  "JK": 50,
+  "heatpump_flow_temperature": 41.83085671965489,
+  "cop_calculation_method": "ecodan",
+  "heatpump_capacity": 5,
+  "heatpump_COP": 2.7820114558444624,
+  "heatpump_elec": 1450.4692804732724
+}

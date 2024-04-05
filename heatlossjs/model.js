@@ -510,6 +510,11 @@ function upgrade_file(tmp) {
 
     tmp.elements = [];
     
+    tmp.solver_running = false;
+    if (tmp.heatpump_flow_rate == undefined) {
+        tmp.heatpump_flow_rate = 12;
+    }
+    
     for (var room in tmp.rooms) {
         for (var z in tmp.rooms[room].elements) {
         
@@ -527,6 +532,10 @@ function upgrade_file(tmp) {
                 height: e.height
             };
             
+            if (new_element.width==null || new_element.height == null) {
+                new_element.area = e.area
+            }
+            
             if (e.subtractfrom != undefined && tmp.rooms[room].elements[e.subtractfrom] != undefined) {
                 let e2 = tmp.rooms[room].elements[e.subtractfrom];
                 if (e2.id != undefined) {
@@ -537,7 +546,18 @@ function upgrade_file(tmp) {
             // Auto link
             var link_element_exists = false;
             var link_element_id = false;
+            
+            if (e.boundary == undefined) {
+                e.boundary = "external";
+            }
+            
             if (e.boundary != "external" && e.boundary != "unheated" && e.boundary != "ground") {
+            
+                if (tmp.rooms[e.boundary]==undefined) {
+                    console.log(e.boundary);
+                }
+            
+            
                 for (var x in tmp.rooms[e.boundary].elements) {
                     let le = tmp.rooms[e.boundary].elements[x];
                     if (le.boundary != undefined && le.boundary == room) {

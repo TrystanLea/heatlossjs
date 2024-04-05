@@ -1,0 +1,360 @@
+{
+  "project_name": "study",
+  "degreedays": 2228,
+  "heating_MWT": 40,
+  "T": {
+    "external": -3,
+    "ground": 10,
+    "unheated": 10
+  },
+  "element_type": {
+    "Ground Floor": {
+      "uvalue": 0.7
+    },
+    "Insulated Roof": {
+      "uvalue": 0.6
+    },
+    "Stone Wall 0.70m": {
+      "uvalue": 1.7
+    },
+    "Stone Wall 2.00m": {
+      "uvalue": 1.3
+    },
+    "Timber Frame Wall": {
+      "uvalue": 0.6
+    },
+    "Single Glazing": {
+      "uvalue": 4.8
+    },
+    "Door": {
+      "uvalue": 4.8
+    }
+  },
+  "rooms": {
+    "Study": {
+      "temperature": 20,
+      "area": 33.68,
+      "height": 2.15,
+      "air_change_an_hour": 1,
+      "elements": [
+        {
+          "id": 0,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 23,
+          "heat": 1101.70368,
+          "kwh": 2561.31735552
+        },
+        {
+          "id": 1,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 23,
+          "heat": 174.8736,
+          "kwh": 406.5583104
+        },
+        {
+          "id": 2,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 23,
+          "heat": 375.7705499999999,
+          "kwh": 873.6175151999998
+        },
+        {
+          "id": 3,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 23,
+          "heat": 49.54889999999999,
+          "kwh": 115.19472959999999
+        },
+        {
+          "id": 4,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 23,
+          "heat": 54.10704,
+          "kwh": 125.79181055999999
+        },
+        {
+          "id": 5,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 23,
+          "heat": 37.359359999999995,
+          "kwh": 86.85563903999999
+        },
+        {
+          "id": 6,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 23,
+          "heat": 132.3144,
+          "kwh": 307.6137216
+        },
+        {
+          "id": 7,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 23,
+          "heat": 42.43914000000001,
+          "kwh": 98.66546496000001
+        },
+        {
+          "id": 8,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 23,
+          "heat": 92.12937500000001,
+          "kwh": 214.18878000000004
+        },
+        {
+          "id": 9,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 23,
+          "heat": 35.9996,
+          "kwh": 83.6943744
+        },
+        {
+          "id": 10,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 23,
+          "heat": 184.943,
+          "kwh": 429.96835200000004
+        },
+        {
+          "id": 11,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 23,
+          "heat": 122.14150000000001,
+          "kwh": 283.963056
+        },
+        {
+          "id": 12,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 23,
+          "heat": 187.79040000000003,
+          "kwh": 436.5881856000001
+        },
+        {
+          "id": 13,
+          "boundary": "ground",
+          "temperature": 10,
+          "deltaT": 10,
+          "heat": 235.75999999999996,
+          "kwh": 1260.6558719999998
+        },
+        {
+          "id": 14,
+          "boundary": "external",
+          "temperature": -3,
+          "deltaT": 23,
+          "heat": 464.784,
+          "kwh": 1080.562176
+        }
+      ],
+      "radiators": [
+        {
+          "name": "Cast Iron 1200x600x160",
+          "heat50k": 1500,
+          "model": "pow",
+          "heat": 455.79467575942436
+        },
+        {
+          "name": "Double Panel Convector 1200x600",
+          "heat50k": 2146,
+          "model": "pow",
+          "heat": 652.0902494531498
+        },
+        {
+          "name": "Double Panel Convector 1200x600",
+          "heat50k": 2146,
+          "model": "pow",
+          "heat": 652.0902494531498
+        },
+        {
+          "name": "Double Panel Convector 1200x500",
+          "heat50k": 1834,
+          "model": "pow",
+          "heat": 557.2849568951895
+        },
+        {
+          "name": "Double Panel Convector 1200x500",
+          "heat50k": 1834,
+          "model": "pow",
+          "heat": 557.2849568951895
+        }
+      ],
+      "wk": 180.33737499999998,
+      "heat": 3841.2716250000003,
+      "kwh": 9643.000115999997,
+      "A": 117.29785000000001,
+      "volume": 72.41199999999999,
+      "infiltration_heat": 549.60708,
+      "total_radiator_output": 2874.5450884561033,
+      "total_ufh_output": 0,
+      "ufh": [],
+      "total_heat_output": 2874.5450884561033,
+      "energy": 889.5247239283061
+    }
+  },
+  "elements": [
+    {
+      "type": "Single Glazing",
+      "orientation": "Front",
+      "width": 5.04,
+      "height": 1.98,
+      "A": 9.9792,
+      "uvalue": 4.8,
+      "wk": 47.90016
+    },
+    {
+      "type": "Single Glazing",
+      "orientation": "Front Left",
+      "width": 0.8,
+      "height": 1.98,
+      "A": 1.584,
+      "uvalue": 4.8,
+      "wk": 7.6032
+    },
+    {
+      "type": "Stone Wall 0.70m",
+      "orientation": "Left",
+      "width": 4.47,
+      "height": 2.15,
+      "A": 9.610499999999998,
+      "uvalue": 1.7,
+      "wk": 16.337849999999996
+    },
+    {
+      "type": "Timber Frame Wall",
+      "orientation": "Back",
+      "width": 1.67,
+      "height": 2.15,
+      "A": 3.5904999999999996,
+      "uvalue": 0.6,
+      "wk": 2.1542999999999997
+    },
+    {
+      "type": "Timber Frame Wall",
+      "orientation": "Back Left",
+      "width": 2.08,
+      "height": 1.885,
+      "A": 3.9208000000000003,
+      "uvalue": 0.6,
+      "wk": 2.35248
+    },
+    {
+      "type": "Timber Frame Wall",
+      "orientation": "Back",
+      "width": 3.76,
+      "height": 0.72,
+      "A": 2.7072,
+      "uvalue": 0.6,
+      "wk": 1.6243199999999998
+    },
+    {
+      "type": "Stone Wall 0.70m",
+      "orientation": "Back",
+      "width": 3.76,
+      "height": 0.9,
+      "A": 3.384,
+      "uvalue": 1.7,
+      "wk": 5.7528
+    },
+    {
+      "type": "Stone Wall 0.70m",
+      "orientation": "Back",
+      "width": 0.67,
+      "height": 1.62,
+      "A": 1.0854000000000001,
+      "uvalue": 1.7,
+      "wk": 1.8451800000000003
+    },
+    {
+      "type": "Stone Wall 0.70m",
+      "orientation": "Back Right",
+      "width": 1.25,
+      "height": 1.885,
+      "A": 2.35625,
+      "uvalue": 1.7,
+      "wk": 4.005625
+    },
+    {
+      "type": "Stone Wall 2.00m",
+      "orientation": "Right",
+      "width": 0.56,
+      "height": 2.15,
+      "A": 1.204,
+      "uvalue": 1.3,
+      "wk": 1.5652
+    },
+    {
+      "type": "Stone Wall 0.70m",
+      "orientation": "Right",
+      "width": 2.2,
+      "height": 2.15,
+      "A": 4.73,
+      "uvalue": 1.7,
+      "wk": 8.041
+    },
+    {
+      "type": "Stone Wall 2.00m",
+      "orientation": "Right",
+      "width": 1.9,
+      "height": 2.15,
+      "A": 4.085,
+      "uvalue": 1.3,
+      "wk": 5.3105
+    },
+    {
+      "type": "Door",
+      "orientation": "Right",
+      "width": 0.81,
+      "height": 2.1,
+      "A": 1.7010000000000003,
+      "uvalue": 4.8,
+      "wk": 8.164800000000001
+    },
+    {
+      "type": "Ground Floor",
+      "orientation": "",
+      "area": 33.68,
+      "A": 33.68,
+      "width": 0,
+      "height": 0,
+      "uvalue": 0.7,
+      "wk": 23.575999999999997
+    },
+    {
+      "type": "Insulated Roof",
+      "orientation": "",
+      "area": 33.68,
+      "A": 33.68,
+      "width": 0,
+      "height": 0,
+      "uvalue": 0.6,
+      "wk": 20.208
+    }
+  ],
+  "solver_running": false,
+  "heatpump_flow_rate": 12,
+  "house": {
+    "heatloss": 3841.2716250000003,
+    "kwh": 9643.000115999997,
+    "total_heat_output": 2874.5450884561033,
+    "internal_heat_balance": 0,
+    "wk": null
+  },
+  "JK": 50,
+  "heatpump_flow_temperature": 41.73165366774464,
+  "cop_calculation_method": "ecodan",
+  "heatpump_capacity": 5,
+  "heatpump_COP": 2.800366815629922,
+  "heatpump_elec": 1026.4887701183159
+}
