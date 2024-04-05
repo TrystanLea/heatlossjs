@@ -1,7 +1,7 @@
 {
   "project_name": "study",
   "degreedays": 2228,
-  "heating_MWT": 40,
+  "heating_MWT": 39.4,
   "T": {
     "external": -3,
     "ground": 10,
@@ -32,175 +32,181 @@
   },
   "rooms": {
     "Study": {
-      "temperature": 20,
+      "temperature": 19,
       "area": 33.68,
       "height": 2.15,
-      "air_change_an_hour": 1,
+      "air_change_an_hour": 0.75,
       "elements": [
         {
           "id": 0,
           "boundary": "external",
           "temperature": -3,
-          "deltaT": 23,
-          "heat": 1101.70368,
+          "deltaT": 22,
+          "heat": 1053.80352,
           "kwh": 2561.31735552
         },
         {
           "id": 1,
           "boundary": "external",
           "temperature": -3,
-          "deltaT": 23,
-          "heat": 174.8736,
+          "deltaT": 22,
+          "heat": 167.2704,
           "kwh": 406.5583104
         },
         {
           "id": 2,
           "boundary": "external",
           "temperature": -3,
-          "deltaT": 23,
-          "heat": 375.7705499999999,
+          "deltaT": 22,
+          "heat": 359.4326999999999,
           "kwh": 873.6175151999998
         },
         {
           "id": 3,
           "boundary": "external",
           "temperature": -3,
-          "deltaT": 23,
-          "heat": 49.54889999999999,
+          "deltaT": 22,
+          "heat": 47.39459999999999,
           "kwh": 115.19472959999999
         },
         {
           "id": 4,
           "boundary": "external",
           "temperature": -3,
-          "deltaT": 23,
-          "heat": 54.10704,
+          "deltaT": 22,
+          "heat": 51.75456,
           "kwh": 125.79181055999999
         },
         {
           "id": 5,
           "boundary": "external",
           "temperature": -3,
-          "deltaT": 23,
-          "heat": 37.359359999999995,
+          "deltaT": 22,
+          "heat": 35.73504,
           "kwh": 86.85563903999999
         },
         {
           "id": 6,
           "boundary": "external",
           "temperature": -3,
-          "deltaT": 23,
-          "heat": 132.3144,
+          "deltaT": 22,
+          "heat": 126.5616,
           "kwh": 307.6137216
         },
         {
           "id": 7,
           "boundary": "external",
           "temperature": -3,
-          "deltaT": 23,
-          "heat": 42.43914000000001,
+          "deltaT": 22,
+          "heat": 40.59396,
           "kwh": 98.66546496000001
         },
         {
           "id": 8,
           "boundary": "external",
           "temperature": -3,
-          "deltaT": 23,
-          "heat": 92.12937500000001,
+          "deltaT": 22,
+          "heat": 88.12375,
           "kwh": 214.18878000000004
         },
         {
           "id": 9,
           "boundary": "external",
           "temperature": -3,
-          "deltaT": 23,
-          "heat": 35.9996,
+          "deltaT": 22,
+          "heat": 34.4344,
           "kwh": 83.6943744
         },
         {
           "id": 10,
           "boundary": "external",
           "temperature": -3,
-          "deltaT": 23,
-          "heat": 184.943,
+          "deltaT": 22,
+          "heat": 176.90200000000002,
           "kwh": 429.96835200000004
         },
         {
           "id": 11,
           "boundary": "external",
           "temperature": -3,
-          "deltaT": 23,
-          "heat": 122.14150000000001,
+          "deltaT": 22,
+          "heat": 116.831,
           "kwh": 283.963056
         },
         {
           "id": 12,
           "boundary": "external",
           "temperature": -3,
-          "deltaT": 23,
-          "heat": 187.79040000000003,
+          "deltaT": 22,
+          "heat": 179.62560000000002,
           "kwh": 436.5881856000001
         },
         {
           "id": 13,
           "boundary": "ground",
           "temperature": 10,
-          "deltaT": 10,
-          "heat": 235.75999999999996,
+          "deltaT": 9,
+          "heat": 212.18399999999997,
           "kwh": 1260.6558719999998
         },
         {
           "id": 14,
           "boundary": "external",
           "temperature": -3,
-          "deltaT": 23,
-          "heat": 464.784,
+          "deltaT": 22,
+          "heat": 444.57599999999996,
           "kwh": 1080.562176
         }
       ],
       "radiators": [
         {
-          "name": "Cast Iron 1200x600x160",
-          "heat50k": 1500,
+          "name": "Double Panel Convector 1200x600",
+          "heat50k": 2146,
           "model": "pow",
-          "heat": 455.79467575942436
+          "heat": 669.0952236135807
         },
         {
           "name": "Double Panel Convector 1200x600",
           "heat50k": 2146,
           "model": "pow",
-          "heat": 652.0902494531498
+          "heat": 669.0952236135807
         },
         {
           "name": "Double Panel Convector 1200x600",
           "heat50k": 2146,
           "model": "pow",
-          "heat": 652.0902494531498
+          "heat": 669.0952236135807
         },
         {
           "name": "Double Panel Convector 1200x500",
           "heat50k": 1834,
           "model": "pow",
-          "heat": 557.2849568951895
+          "heat": 571.8176328552223
         },
         {
           "name": "Double Panel Convector 1200x500",
           "heat50k": 1834,
           "model": "pow",
-          "heat": 557.2849568951895
+          "heat": 571.8176328552223
+        },
+        {
+          "name": "Double Panel Convector 800x500",
+          "heat50k": 1234,
+          "model": "pow",
+          "heat": 384.7453429353023
         }
       ],
-      "wk": 180.33737499999998,
-      "heat": 3841.2716250000003,
-      "kwh": 9643.000115999997,
+      "wk": 174.36338499999997,
+      "heat": 3529.5064699999994,
+      "kwh": 9323.558922719998,
       "A": 117.29785000000001,
       "volume": 72.41199999999999,
-      "infiltration_heat": 549.60708,
-      "total_radiator_output": 2874.5450884561033,
+      "infiltration_heat": 394.28333999999995,
+      "total_radiator_output": 3535.6662794864887,
       "total_ufh_output": 0,
       "ufh": [],
-      "total_heat_output": 2874.5450884561033,
-      "energy": 889.5247239283061
+      "total_heat_output": 3535.6662794864887,
+      "energy": 835.4318455621341
     }
   },
   "elements": [
@@ -345,16 +351,16 @@
   "solver_running": false,
   "heatpump_flow_rate": 12,
   "house": {
-    "heatloss": 3841.2716250000003,
-    "kwh": 9643.000115999997,
-    "total_heat_output": 2874.5450884561033,
+    "heatloss": 3529.5064699999994,
+    "kwh": 9323.558922719998,
+    "total_heat_output": 3535.6662794864887,
     "internal_heat_balance": 0,
     "wk": null
   },
   "JK": 50,
-  "heatpump_flow_temperature": 41.73165366774464,
+  "heatpump_flow_temperature": 41.52991944547379,
   "cop_calculation_method": "ecodan",
   "heatpump_capacity": 5,
-  "heatpump_COP": 2.800366815629922,
-  "heatpump_elec": 1026.4887701183159
+  "heatpump_COP": 2.993238077099877,
+  "heatpump_elec": 1181.2178611973845
 }
