@@ -270,6 +270,12 @@ function calculate() {
         kwh: 0,
         total_heat_output: 0,
         internal_heat_balance: 0,
+        total_area: 0,
+        total_volume: 0,
+        total_external_area: 0,
+        total_external_boundary_area: 0,
+        total_unheated_boundary_area: 0,
+        total_ground_boundary_area: 0,
     };
     
     config.JK = 50;
@@ -320,6 +326,11 @@ function calculate() {
         room.heat = 0
         room.kwh = 0
         room.A = 0
+
+        room.total_external_area = 0;
+        room.total_external_boundary_area = 0;
+        room.total_unheated_boundary_area = 0;
+        room.total_ground_boundary_area = 0;
         
         for (var i in room.elements) {
             var e = room.elements[i]
@@ -351,8 +362,33 @@ function calculate() {
             else if (e.boundary=='ground') config.house.wk += WK
             else {
                 config.house.internal_heat_balance += e.heat  
-            }    
+            }
+
+            // Total envelope area
+            if (e.boundary=='external') {
+                config.house.total_external_area += config.elements[e.id].A
+                config.house.total_external_boundary_area += config.elements[e.id].A
+                room.total_external_area += config.elements[e.id].A
+                room.total_external_boundary_area += config.elements[e.id].A
+            }
+            // include unhetaed areas
+            if (e.boundary=='unheated') {
+                config.house.total_external_area += config.elements[e.id].A
+                config.house.total_unheated_boundary_area += config.elements[e.id].A
+                room.total_external_area += config.elements[e.id].A
+                room.total_unheated_boundary_area += config.elements[e.id].A
+            }
+            // include ground areas
+            if (e.boundary=='ground') {
+                config.house.total_external_area += config.elements[e.id].A
+                config.house.total_ground_boundary_area += config.elements[e.id].A
+                room.total_external_area += config.elements[e.id].A
+                room.total_ground_boundary_area += config.elements[e.id].A
+            }
         }
+
+        // Print to console total room areas
+        console.log("Room: "+z+" Area: "+room.A.toFixed(1)+"  Envelope area: "+room.total_external_area.toFixed(1)+" External boundary area: "+room.total_external_boundary_area.toFixed(1)+" Unheated Area: "+room.total_unheated_boundary_area.toFixed(1)+" Ground Area: "+room.total_ground_boundary_area.toFixed(1));
 
         // ----------------------------------------------------------------------------------------
         // Ventilation and infiltration
@@ -363,6 +399,9 @@ function calculate() {
             room.area = room.width * room.length
         }
         room.volume = room.area * room.height
+
+        config.house.total_area += room.area
+        config.house.total_volume += room.volume
         
         var deltaT = room.temperature - config.T.external
         

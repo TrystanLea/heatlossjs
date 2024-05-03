@@ -271,10 +271,28 @@
     <div class="section-heading"><b><b>House Totals</b></b></div>
     <div class="room-elements">
       <table>
-        <tr><td>Annual space heating demand:</td><td><div class="value">{{ house.kwh | toFixed(0) }}</div><span class="unit">kWh</span></td></tr>
+        <tr><td>Annual space heating demand:</td><td style="width:20%"><div class="value">{{ house.kwh | toFixed(0) }}</div><span class="unit">kWh</span></td></tr>
         <tr><td>Maximum heat requirement:</td><td><div class="value">{{ house.heatloss | toFixed(0) }}</div><span class="unit">W</span></td></tr>
         <tr><td>Total radiator & UFH output</td><td><div class="value">{{ house.total_heat_output | toFixed(0) }}</div><span class="unit">W</span></td></tr>
         <tr><td>Internal heat balance (should be zero)</td><td><div class="value">{{ house.internal_heat_balance | toFixed(0) }}</div><span class="unit">W</span></td></tr>
+
+      </table>
+    </div>
+
+    <div class="section-heading"><b><b>House Dimensions</b></b></div>
+    <div class="room-elements">
+      <table>
+
+        <tr><td>Total floor area</td><td style="width:20%"><div class="value">{{ house.total_area | toFixed(1) }}</div><span class="unit">m2</span></td></tr>
+        <tr><td>Total volume</td><td><div class="value">{{ house.total_volume | toFixed(1) }}</div><span class="unit">m3</span></td></tr>
+        <!-- external boundary area -->
+        <tr><td>Total external boundary area</td><td><div class="value">{{ house.total_external_boundary_area | toFixed(1) }}</div><span class="unit">m2</span></td></tr>
+        <!-- unheated boundary area-->
+        <tr><td>Total unheated boundary area</td><td><div class="value">{{ house.total_unheated_boundary_area | toFixed(1) }}</div><span class="unit">m2</span></td></tr>
+        <!-- ground boundary area-->
+        <tr><td>Total ground boundary area</td><td><div class="value">{{ house.total_ground_boundary_area | toFixed(1) }}</div><span class="unit">m2</span></td></tr>
+        <!-- envelope area-->
+        <tr><td>Total envelope area</td><td><div class="value">{{ house.total_external_area | toFixed(1) }}</div><span class="unit">m2</span></td></tr>
       </table>
     </div>
   </div>
