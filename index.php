@@ -1,6 +1,6 @@
 <?php 
     $v = 311;
-    $example = file_get_contents("files/midterrace.json");
+    $example = file_get_contents("files/heatlossjs_midterrace_24Jul1826.json");
 
 ?>
 <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
@@ -25,7 +25,7 @@
     <div style="text-align:left">
     <b>How to use this tool</b>
     <ul>
-      <li>Example calculation and discussion: <a href="https://trystanlea.org.uk/roombyroomheatloss2">A mid terraced house</a></li>
+      <li>Example calculation and discussion: <a href="https://trystanlea.org.uk/roombyroomheatloss2">A mid terraced house</a><br><i>(Typical design temperature heat loss, heated neighbours, average January wind speeds and air change rates.)</li>
       <li>This tool is based on the BS EN 12831:2003 heat loss calculation standard:<br><a href="https://trystanlea.org.uk/roombyroomheatloss">Room by room heat loss using MCS heat pump calculator</a></li>
       <li>There are a number of useful resources available on the MCS installer standards and tools page (see under Heat pump section), including U-value and heat emitter guides: <a href="https://mcscertified.com/standards-tools-library/">MCS installer standards and tools</a></li>
       <li><a href="https://mcscertified.com/wp-content/uploads/2020/04/Guidance-on-U-Values-from-Domestic-Heating-Design-Guide.pdf">MCS Guidance on U-Values from Domestic Heating Design Guide</a></li>
