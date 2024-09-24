@@ -93,7 +93,14 @@ function load_app() {
             add_element: function(roomName) {
                 var length = config.rooms[roomName].elements.length;
                 if (length>0) {
-                    var id = config.rooms[roomName].elements[length-1].id;
+                    // Find closest element that is not false
+                    var id = false;
+                    for (var i=length-1; i>=0; i--) {
+                        if (config.rooms[roomName].elements[i]!=false) {
+                            id = config.rooms[roomName].elements[i].id;
+                            break;
+                        }
+                    }
                     config.elements.push({
                         type: config.elements[id].type,
                         orientation: config.elements[id].orientation,

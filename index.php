@@ -1,5 +1,5 @@
 <?php 
-    $v = 311;
+    $v = 312;
     $example = file_get_contents("files/heatlossjs_midterrace_24Jul1826.json");
 
 ?>
