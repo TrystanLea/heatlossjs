@@ -1,4 +1,4 @@
-<?php $v = 2; ?>
+<?php $v = 12; ?>
 <!doctype html>
 <html lang="en">
 <head>
@@ -56,7 +56,7 @@
 
       <svg ref="svg" class="fp-svg" :width="size.w" :height="size.h" :style="{cursor: cursor}"
         @pointerdown.prevent="on_down" @pointermove="on_move" @pointerup="on_up" @pointercancel="on_up"
-        @pointerleave="hover=null; ghost=null" @wheel.prevent="on_wheel" @contextmenu.prevent>
+        @pointerleave="hover=null; ghost=null; split_ghost=null" @wheel.prevent="on_wheel" @contextmenu.prevent>
         <defs>
           <pattern id="fp-hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
             <rect width="8" height="8" class="hatch-bg"/>
@@ -68,13 +68,21 @@
           <path :d="grid.minor" class="grid-minor"/>
           <path :d="grid.major" class="grid-major"/>
 
-          <polygon v-for="(w,i) in ghost_bands" :key="'gb'+i" :points="rect_points(w.band)" class="ghost-band"/>
+          <polygon v-for="(w,i) in ghost_bands" :key="'gb'+i" :points="poly(w.band)" class="ghost-band"/>
           <polygon v-for="r in ghost_rooms" :key="'g'+r.id" :points="poly(r.points)" class="ghost"/>
 
-          <polygon v-for="(w,i) in level_bands" :key="'b'+i" :points="rect_points(w.band)" :class="['band', 'band-'+wall_class(w)]"/>
+          <!-- outlines under the wall fills, so only the outside edge of the walls is left showing -->
+          <polygon v-for="(w,i) in level_bands" :key="'bo'+i" :points="poly(w.band)" class="band-outline"/>
+          <polygon v-for="(w,i) in level_bands" :key="'b'+i" :points="poly(w.band)" :class="['band', 'band-'+wall_class(w)]"/>
 
           <polygon v-for="r in level_rooms" :key="r.id" :points="poly(r.points)" :fill="room_fill(r)"
             :class="['room', {hover: hover_room==r.id && !drag, multi: multi.indexOf(r.id)!=-1}]"/>
+
+          <polygon v-for="o in level_opening_shapes" :key="'ob'+o.op.id" :points="poly(o.rect)" :class="['opening-band', 'opening-band-'+o.op.kind]"/>
+          <template v-for="o in level_opening_shapes">
+            <line v-for="(l,i) in o.jambs" :key="'oj'+o.op.id+'-'+i" v-bind="l" :class="['opening-jamb', 'opening-jamb-'+o.op.kind]"/>
+            <line v-for="(l,i) in o.lines" :key="'ol'+o.op.id+'-'+i" v-bind="l" :class="['opening-glass', 'opening-glass-'+o.op.kind]"/>
+          </template>
 
           <line v-for="(w,i) in level_walls" :key="'w'+i" :x1="sx(w.x1)" :y1="sy(w.y1)" :x2="sx(w.x2)" :y2="sy(w.y2)"
             :class="['wall', 'wall-'+wall_class(w)]"/>
@@ -82,11 +90,15 @@
           <polygon v-if="selected_room && selected_room.level==level.id" :points="poly(selected_room.points)" class="room-selected"/>
           <line v-if="selected_wall" :x1="sx(selected_wall.x1)" :y1="sy(selected_wall.y1)" :x2="sx(selected_wall.x2)" :y2="sy(selected_wall.y2)" class="wall-selected"/>
 
-          <polygon v-for="o in level_opening_shapes" :key="'ob'+o.op.id" :points="rect_points(o.rect)"
-            :class="['opening-band', 'opening-band-'+o.op.kind, {selected: selected_opening===o.op}]"/>
-          <line v-for="op in level_openings" :key="op.id" v-bind="opening_line(op)"
+          <polygon v-for="o in level_opening_shapes" v-if="selected_opening===o.op" :key="'os'+o.op.id" :points="poly(o.rect)" class="opening-selected"/>
+          <line v-for="op in level_loose_openings" :key="op.id" v-bind="opening_line(op)"
             :class="['opening', 'opening-'+op.kind, {selected: selected_opening===op}]"/>
-          <line v-if="ghost" v-bind="opening_line(ghost)" :class="['opening', 'opening-'+ghost.kind, 'opening-ghost']"/>
+          <polygon v-if="ghost && opening_rect(ghost)" :points="poly(opening_rect(ghost))" :class="['opening-band', 'opening-band-'+ghost.kind, 'opening-ghost']"/>
+          <line v-else-if="ghost" v-bind="opening_line(ghost)" :class="['opening', 'opening-'+ghost.kind, 'opening-ghost']"/>
+          <g v-if="split_ghost" class="split-ghost">
+            <line v-bind="split_ghost_line(split_ghost)"/>
+            <circle :cx="sx(split_ghost.x)" :cy="sy(split_ghost.y)" r="4"/>
+          </g>
 
           <g v-for="r in level_rooms" :key="'l'+r.id" :class="['room-label', {small: room_label(r).small}]">
             <text v-for="(l,i) in room_label(r).lines" :key="i" :x="room_label(r).x" :y="room_label(r).y+i*16" :class="l.cls">{{ l.text }}</text>
@@ -106,6 +118,7 @@
           <g v-if="selected_room && selected_room.level==level.id && !drag">
             <circle v-for="(p,i) in selected_room.points" :key="'h'+i" :cx="sx(p[0])" :cy="sy(p[1])" r="5" class="handle"/>
           </g>
+          <circle v-if="vertex_marker" :cx="sx(vertex_marker.x)" :cy="sy(vertex_marker.y)" r="7" class="vertex-hover"/>
         </g>
 
         <g v-for="d in room_dims" :key="'d'+d.edge" class="dim" @pointerdown.stop.prevent="edit_dim(d)">
@@ -147,10 +160,33 @@
         </div>
       </div>
 
+      <div class="fp-solve">
+        <button :class="['fp-solve-btn', {running: solver.running}]" @click="toggle_solver"
+          title="Work out the temperature each room settles at with its radiators and the mean water temperature, then use those as the room temperatures (undo puts them back)">
+          <svg viewBox="0 0 24 24" class="fp-icon"><path :d="solver.running ? icons.pause : icons.play"/></svg>
+          {{ solver.running ? 'Pause' : 'Solve temperatures' }}
+        </button>
+        <span class="fp-solve-status" v-if="solver.steps">
+          <template v-if="solver.running">Step {{ solver.steps }}</template>
+          <template v-else-if="solver.balanced">Balanced after {{ solver.steps }} steps</template>
+          <template v-else>Paused at step {{ solver.steps }}</template>
+        </span>
+      </div>
+
       <div class="fp-zoom">
         <button @click="zoom(1/1.25)" title="Zoom out (-)">−</button>
         <button @click="zoom(1.25)" title="Zoom in (+)">+</button>
         <button @click="fit" title="Fit to screen (F)">Fit</button>
+        <label title="Snap grid for drawing and moving (hold Alt to turn off while dragging)">Snap
+          <select v-model.number="plan.grid" @change="commit">
+            <option :value="0">Off</option>
+            <option :value="0.01">1 cm</option>
+            <option :value="0.05">5 cm</option>
+            <option :value="0.1">10 cm</option>
+            <option :value="0.25">25 cm</option>
+            <option :value="0.5">50 cm</option>
+          </select>
+        </label>
         <label title="Colour rooms by heat loss per m²"><input type="checkbox" v-model="show_heat"> Heat map</label>
       </div>
 
@@ -395,7 +431,7 @@
             <li><b>Name it</b>: type the name straight after drawing. Bedrooms get 18°C, living rooms 21°C and bathrooms 22°C automatically.</li>
             <li><b>Add windows and doors</b> with <kbd>W</kbd> and <kbd>D</kbd>: click on a wall.</li>
             <li><b>Add a floor</b> with <b>+ Floor</b>. The floor below shows faintly to trace over. Floors and ceilings between rooms are found from the overlap.</li>
-            <li><b>Adjust</b>: drag walls, corners or whole rooms. Click a wall to set party walls or its construction, and click a length to type an exact size.</li>
+            <li><b>Adjust</b>: drag walls or whole rooms. Drag a corner in any direction to angle the walls, hold <kbd>Shift</kbd> to keep them square. Click a wall to set party walls or its construction, and click a length to type an exact size. To put a step in a wall, cut it with the <b>Split</b> tool (<kbd>S</kbd>) and drag one part.</li>
           </ol>
           <p class="fp-muted">
             Pan by dragging empty space, zoom with the scroll wheel. Shift-click rooms to select several and merge them into L-shapes.
@@ -483,6 +519,7 @@
           <div class="fp-field">
             <label>Snap grid</label>
             <select v-model.number="plan.grid" @change="commit">
+              <option :value="0">Off</option>
               <option :value="0.01">1 cm</option>
               <option :value="0.05">5 cm</option>
               <option :value="0.1">10 cm</option>

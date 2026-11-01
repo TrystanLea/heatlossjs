@@ -5,7 +5,8 @@
 // heatlossjs config object that calculate() understands.
 //
 // Plan coordinates are in metres, x to the right, y down the screen.
-// Rooms are axis aligned (orthogonal) polygons stored clockwise on screen.
+// Rooms are polygons stored clockwise on screen. Walls are usually square to
+// the grid but can be at any angle.
 // =========================================
 var floorplan_model = (function () {
 
@@ -84,10 +85,68 @@ var floorplan_model = (function () {
         return out;
     }
 
-    // Area of overlap between two orthogonal polygons (exact for axis aligned shapes)
+    function cross3(a, b, c) {
+        return (b[0]-a[0])*(c[1]-a[1]) - (b[1]-a[1])*(c[0]-a[0]);
+    }
+
+    // Split a simple polygon into triangles by ear clipping
+    function triangulate(pts) {
+        var p = clean_polygon(pts), idx = p.map(function(q,i){ return i; }), tris = [];
+        while (idx.length>3) {
+            var found = false;
+            for (var i=0; i<idx.length && !found; i++) {
+                var a = p[idx[(i+idx.length-1)%idx.length]], b = p[idx[i]], c = p[idx[(i+1)%idx.length]];
+                if (cross3(a,b,c)<=1e-12) continue;
+                var blocked = idx.some(function(j) {
+                    var q = p[j];
+                    if (q===a || q===b || q===c) return false;
+                    return cross3(a,b,q)>0 && cross3(b,c,q)>0 && cross3(c,a,q)>0;
+                });
+                if (blocked) continue;
+                tris.push([a,b,c]);
+                idx.splice(i,1);
+                found = true;
+            }
+            if (!found) break;
+        }
+        if (idx.length==3) tris.push(idx.map(function(i){ return p[i]; }));
+        return tris;
+    }
+
+    // Clip a polygon by a convex polygon (both clockwise on screen)
+    function clip_convex(subject, clipper) {
+        var out = subject;
+        for (var i=0; i<clipper.length && out.length; i++) {
+            var a = clipper[i], b = clipper[(i+1)%clipper.length], input = out;
+            out = [];
+            for (var j=0; j<input.length; j++) {
+                var p = input[j], q = input[(j+1)%input.length];
+                var sp = cross3(a,b,p), sq = cross3(a,b,q);
+                if (sp>=0) out.push(p);
+                if ((sp>=0)!=(sq>=0)) {
+                    var t = sp/(sp-sq);
+                    out.push([p[0]+(q[0]-p[0])*t, p[1]+(q[1]-p[1])*t]);
+                }
+            }
+        }
+        return out;
+    }
+
+    // Area of overlap between two polygons
     function intersection_area(a, b) {
         var ba = bbox(a), bb = bbox(b);
         if (ba.x2<=bb.x1+EPS || bb.x2<=ba.x1+EPS || ba.y2<=bb.y1+EPS || bb.y2<=ba.y1+EPS) return 0;
+        if (!is_orthogonal(a) || !is_orthogonal(b)) {
+            var total = 0, tb = triangulate(b);
+            triangulate(a).forEach(function(ta) {
+                tb.forEach(function(t) {
+                    var c = clip_convex(ta, t);
+                    if (c.length>2) total += area(c);
+                });
+            });
+            return total;
+        }
+        // exact for axis aligned shapes
         var xs = unique_sorted(a.concat(b).map(function(p){return p[0]}));
         var ys = unique_sorted(a.concat(b).map(function(p){return p[1]}));
         var total = 0;
@@ -102,24 +161,24 @@ var floorplan_model = (function () {
         return total;
     }
 
-    function in_rect(x, y, r) {
-        return x>r.x1 && x<r.x2 && y>r.y1 && y<r.y2;
-    }
-
     function rects_overlap(a, b) {
         return a.x1<b.x2-EPS && b.x1<a.x2-EPS && a.y1<b.y2-EPS && b.y1<a.y2-EPS;
     }
 
-    // Area of a polygon that lies over wall rectangles of another floor without
-    // also being over one of that floor's rooms
+    // Area of a polygon that lies over wall footprints of another floor without
+    // also being over one of that floor's rooms. Exact when everything is square
+    // to the grid, otherwise measured on a 5cm grid.
     function area_over_walls(pts, rooms, bands) {
         var b = bbox(pts);
-        bands = bands.filter(function(r){ return rects_overlap(b, r); });
+        bands = bands.filter(function(r){ return rects_overlap(b, bbox(r)); });
         if (!bands.length) return 0;
         rooms = rooms.filter(function(p){ return rects_overlap(b, bbox(p)); });
-        var xs = pts.map(function(p){return p[0]}), ys = pts.map(function(p){return p[1]});
-        bands.forEach(function(r){ xs.push(r.x1,r.x2); ys.push(r.y1,r.y2); });
-        rooms.forEach(function(p){ p.forEach(function(q){ xs.push(q[0]); ys.push(q[1]); }); });
+        var xs = [], ys = [];
+        [pts].concat(bands, rooms).forEach(function(p){ p.forEach(function(q){ xs.push(q[0]); ys.push(q[1]); }); });
+        if (![pts].concat(bands, rooms).every(is_orthogonal)) {
+            for (var x=b.x1; x<b.x2; x+=0.05) xs.push(x);
+            for (var y=b.y1; y<b.y2; y+=0.05) ys.push(y);
+        }
         xs = unique_sorted(xs.filter(function(x){ return x>=b.x1-EPS && x<=b.x2+EPS; }));
         ys = unique_sorted(ys.filter(function(y){ return y>=b.y1-EPS && y<=b.y2+EPS; }));
         var total = 0;
@@ -127,7 +186,7 @@ var floorplan_model = (function () {
             for (var j=0; j<ys.length-1; j++) {
                 var cx = (xs[i]+xs[i+1])/2, cy = (ys[j]+ys[j+1])/2;
                 if (!point_in_polygon(cx,cy,pts)) continue;
-                if (!bands.some(function(r){ return in_rect(cx,cy,r); })) continue;
+                if (!bands.some(function(r){ return point_in_polygon(cx,cy,r); })) continue;
                 if (rooms.some(function(p){ return point_in_polygon(cx,cy,p); })) continue;
                 total += (xs[i+1]-xs[i])*(ys[j+1]-ys[j]);
             }
@@ -135,7 +194,10 @@ var floorplan_model = (function () {
         return total;
     }
 
-    // Edge list with axis, line coordinate, extent along the line and outward normal
+    // Edge list with axis ('h', 'v' or 'd' for angled), outward normal and the line it lies on.
+    // Each line has a direction (ax,ay) that is the same for both faces of a wall, positions
+    // along it run from lo to hi, and k is the offset of the line along (mx,my) = (-ay,ax).
+    // c is the familiar coordinate of the line: y for 'h', x for 'v' and k for 'd'.
     function edges(pts) {
         var list = [];
         for (var i=0; i<pts.length; i++) {
@@ -143,21 +205,69 @@ var floorplan_model = (function () {
             var e = {i:i, x1:p[0], y1:p[1], x2:q[0], y2:q[1]};
             var dx = q[0]-p[0], dy = q[1]-p[1];
             e.len = Math.sqrt(dx*dx+dy*dy);
+            e.ux = e.len>0 ? dx/e.len : 1; e.uy = e.len>0 ? dy/e.len : 0;
             if (Math.abs(dy)<EPS) {
-                e.axis = 'h'; e.c = p[1];
-                e.lo = Math.min(p[0],q[0]); e.hi = Math.max(p[0],q[0]);
+                e.axis = 'h'; e.ax = 1; e.ay = 0;
                 e.nx = 0; e.ny = dx>0 ? -1 : 1;
             } else if (Math.abs(dx)<EPS) {
-                e.axis = 'v'; e.c = p[0];
-                e.lo = Math.min(p[1],q[1]); e.hi = Math.max(p[1],q[1]);
+                e.axis = 'v'; e.ax = 0; e.ay = 1;
                 e.nx = dy>0 ? 1 : -1; e.ny = 0;
             } else {
-                e.axis = 'd'; e.c = 0; e.lo = 0; e.hi = e.len;
+                e.axis = 'd';
+                e.ax = e.ux>0 ? e.ux : -e.ux; e.ay = e.ux>0 ? e.uy : -e.uy;
                 e.nx = dy/e.len; e.ny = -dx/e.len;
             }
+            e.mx = -e.ay; e.my = e.ax;
+            e.k = p[0]*e.mx + p[1]*e.my;
+            var s1 = p[0]*e.ax + p[1]*e.ay, s2 = q[0]*e.ax + q[1]*e.ay;
+            e.lo = Math.min(s1,s2); e.hi = Math.max(s1,s2);
+            e.c = e.axis=='h' ? p[1] : (e.axis=='v' ? p[0] : e.k);
             list.push(e);
         }
         return list;
+    }
+
+    // Position along a line (an edge or wall) of a point
+    function along(l, x, y) { return x*l.ax + y*l.ay; }
+
+    // Point on a line at position s along it, offset d along its outward normal
+    function line_point(l, s, d) {
+        return [l.ax*s + l.mx*l.k + l.nx*(d||0), l.ay*s + l.my*l.k + l.ny*(d||0)];
+    }
+
+    function opening_dir(op) {
+        if (op.axis=='h') return [1,0];
+        if (op.axis=='v') return [0,1];
+        return op.dir || [1,0];
+    }
+
+    // Position along an edge or wall of a window or door lying in it, or null. The
+    // opening can sit anywhere from the face of the line out to depth (the wall gap).
+    function opening_along(op, l, depth) {
+        var d = opening_dir(op);
+        if (Math.abs(d[0]*l.ay - d[1]*l.ax)>0.001) return null;
+        var off = (op.x*l.mx + op.y*l.my - l.k)*(l.nx*l.mx + l.ny*l.my);
+        if (off<-OPENING_TOL || off>(depth||0)+OPENING_TOL) return null;
+        return along(l, op.x, op.y);
+    }
+
+    // Do two segments cross (touching at ends does not count)
+    function segments_cross(a, b, c, d) {
+        var d1 = cross3(c,d,a), d2 = cross3(c,d,b), d3 = cross3(a,b,c), d4 = cross3(a,b,d);
+        return ((d1>EPS*EPS && d2<-EPS*EPS) || (d1<-EPS*EPS && d2>EPS*EPS)) &&
+               ((d3>EPS*EPS && d4<-EPS*EPS) || (d3<-EPS*EPS && d4>EPS*EPS));
+    }
+
+    // A polygon whose walls do not cross each other
+    function is_simple(pts) {
+        var n = pts.length;
+        for (var i=0; i<n; i++) {
+            for (var j=i+2; j<n; j++) {
+                if (i==0 && j==n-1) continue;
+                if (segments_cross(pts[i], pts[(i+1)%n], pts[j], pts[(j+1)%n])) return false;
+            }
+        }
+        return true;
     }
 
     function is_orthogonal(pts) {
@@ -188,6 +298,7 @@ var floorplan_model = (function () {
     // Union of touching or overlapping orthogonal polygons.
     // Returns a single polygon, or null if the result would be disjoint or have holes.
     function union(polys) {
+        if (!polys.every(is_orthogonal)) return null;
         var all = [];
         polys.forEach(function(p){ all = all.concat(p); });
         var xs = unique_sorted(all.map(function(p){return p[0]}));
@@ -249,11 +360,10 @@ var floorplan_model = (function () {
             old_rooms.forEach(function(old) {
                 if (!old.edges) return;
                 edges(old.points).forEach(function(oe) {
-                    if (result[ne.i] || !old.edges[oe.i]) return;
-                    if (oe.axis!=ne.axis || oe.nx!=ne.nx || oe.ny!=ne.ny) return;
-                    var along = ne.axis=='h' ? mx : my;
-                    var perp = ne.axis=='h' ? my : mx;
-                    if (Math.abs(perp-oe.c)<EPS && along>=oe.lo-EPS && along<=oe.hi+EPS) {
+                    if (result[ne.i] || !old.edges[oe.i] || oe.len<EPS) return;
+                    if (Math.abs(oe.nx-ne.nx)>0.001 || Math.abs(oe.ny-ne.ny)>0.001) return;
+                    var s = along(oe, mx, my), k = mx*oe.mx + my*oe.my;
+                    if (Math.abs(k-oe.k)<0.002 && s>=oe.lo-EPS && s<=oe.hi+EPS) {
                         result[ne.i] = clone(old.edges[oe.i]);
                     }
                 });
@@ -270,12 +380,10 @@ var floorplan_model = (function () {
         plan.openings.forEach(function(op) {
             if (op.level!=room.level) return;
             room_edges.forEach(function(e) {
-                if (e.axis!=op.axis) return;
-                var c = e.axis=='h' ? op.y : op.x;
-                var t = e.axis=='h' ? op.x : op.y;
-                if (Math.abs(c-e.c)>OPENING_TOL || t<e.lo-EPS || t>e.hi+EPS) return;
-                var start = e.axis=='h' ? e.x1 : e.y1;
-                list.push({opening: op, edge: e.i, dist: Math.abs(t-start)});
+                if (e.len<EPS) return;
+                var t = opening_along(op, e, 0);
+                if (t===null || t<e.lo-EPS || t>e.hi+EPS) return;
+                list.push({opening: op, edge: e.i, dist: Math.abs(t-along(e, e.x1, e.y1))});
             });
         });
         return list;
@@ -401,14 +509,16 @@ var floorplan_model = (function () {
 
             room_edges.forEach(function(e) {
                 var p = props[e.i] || {};
-                var pieces = [{lo:e.lo, hi:e.hi, other:null}];
+                // zero length edges are split points waiting to be dragged into a step
+                var pieces = e.len<EPS ? [] : [{lo:e.lo, hi:e.hi, other:null}];
 
-                if (e.axis!='d') {
+                if (pieces.length) {
                     var candidates = [];
+                    var side = e.nx*e.mx + e.ny*e.my;
                     others.forEach(function(S) {
                         edges(S.points).forEach(function(f) {
-                            if (f.axis!=e.axis || f.nx!=-e.nx || f.ny!=-e.ny) return;
-                            var dist = (f.c-e.c)*(e.axis=='h' ? e.ny : e.nx);
+                            if (f.len<EPS || Math.abs(f.nx+e.nx)>0.001 || Math.abs(f.ny+e.ny)>0.001) return;
+                            var dist = (f.k-e.k)*side;
                             if (dist<-EPS || dist>gap+EPS) return;
                             var lo = Math.max(e.lo,f.lo), hi = Math.min(e.hi,f.hi);
                             if (hi-lo<0.01) return;
@@ -429,7 +539,7 @@ var floorplan_model = (function () {
                     });
                 }
 
-                var t = e.axis=='d' ? 0 : edge_thickness(plan, p);
+                var t = edge_thickness(plan, p);
                 pieces.forEach(function(pc){ pc.thick = pc.other ? pc.dist : t; });
                 var seg = {R:R, e:e, p:p, pieces:pieces, n:room_edges.length};
                 segs.push(seg);
@@ -439,7 +549,7 @@ var floorplan_model = (function () {
 
         // Footprint of each stretch of wall, extended round outside corners so walls join up
         function thick_at(seg, x, y) {
-            var t = seg.e.axis=='h' ? x : y;
+            var t = along(seg.e, x, y);
             for (var k=0; k<seg.pieces.length; k++) {
                 var pc = seg.pieces[k];
                 if (Math.abs(pc.lo-t)<EPS || Math.abs(pc.hi-t)<EPS) return pc.thick;
@@ -455,7 +565,8 @@ var floorplan_model = (function () {
             s.next = seg_by[s.R.id+":"+((e.i+1)%s.n)];
             s.convex_start = convex(s.prev.e, e);
             s.convex_end = convex(e, s.next.e);
-            var forward = (e.axis=='h' ? e.x2-e.x1 : e.y2-e.y1) > 0;
+            var forward = (e.x2-e.x1)*e.ax + (e.y2-e.y1)*e.ay > 0;
+            s.forward = forward;
             s.convex_lo = forward ? s.convex_start : s.convex_end;
             s.convex_hi = forward ? s.convex_end : s.convex_start;
         });
@@ -465,7 +576,6 @@ var floorplan_model = (function () {
         // junction rather than an outside wall.
         segs.forEach(function(s) {
             var pieces = s.pieces;
-            if (s.e.axis=='d') return;
             pieces.forEach(function(pc, k) {
                 if (pc.other || pc.hi-pc.lo>gap+EPS) return;
                 var before = k>0 ? pieces[k-1] : null, after = k<pieces.length-1 ? pieces[k+1] : null;
@@ -477,20 +587,47 @@ var floorplan_model = (function () {
             });
         });
 
+        // Where the outside faces of two walls meet at a corner, or null if they are
+        // close to parallel and the corner would run off into a long spike
+        function miter(V, e1, t1, e2, t2) {
+            var rx = e2.nx*t2 - e1.nx*t1, ry = e2.ny*t2 - e1.ny*t1;
+            var det = e2.ux*e1.uy - e1.ux*e2.uy;
+            if (Math.abs(det)<1e-6) return null;
+            var l = (e2.ux*ry - rx*e2.uy)/det;
+            var P = [V[0]+e1.nx*t1+e1.ux*l, V[1]+e1.ny*t1+e1.uy*l];
+            var dx = P[0]-V[0], dy = P[1]-V[1];
+            if (Math.sqrt(dx*dx+dy*dy) > 4*Math.max(t1,t2)+0.01) return null;
+            return P;
+        }
         segs.forEach(function(s) {
             var e = s.e;
-            if (e.axis=='d') return;
-            var ext_start = s.convex_start ? thick_at(s.prev, e.x1, e.y1) : 0;
-            var ext_end = s.convex_end ? thick_at(s.next, e.x2, e.y2) : 0;
-            var start = e.axis=='h' ? e.x1 : e.y1, end = e.axis=='h' ? e.x2 : e.y2;
-            var ext_lo = start<end ? ext_start : ext_end, ext_hi = start<end ? ext_end : ext_start;
-            var n = e.axis=='h' ? e.ny : e.nx;
+            if (e.len<EPS) return;
+            // lo and hi ends of the edge, which corner they are at and the wall beyond it
+            var ends = {
+                lo: s.forward ? { V:[e.x1,e.y1], adj:s.prev, convex:s.convex_start, dir:-1 } : { V:[e.x2,e.y2], adj:s.next, convex:s.convex_end, dir:-1 },
+                hi: s.forward ? { V:[e.x2,e.y2], adj:s.next, convex:s.convex_end, dir:1 } : { V:[e.x1,e.y1], adj:s.prev, convex:s.convex_start, dir:1 }
+            };
             s.pieces.forEach(function(pc) {
                 if (pc.thick<EPS) return;
-                var lo = pc.lo - (Math.abs(pc.lo-e.lo)<EPS ? ext_lo : 0);
-                var hi = pc.hi + (Math.abs(pc.hi-e.hi)<EPS ? ext_hi : 0);
-                var a = Math.min(e.c, e.c+n*pc.thick), b = Math.max(e.c, e.c+n*pc.thick);
-                pc.band = e.axis=='h' ? {x1:lo, y1:a, x2:hi, y2:b} : {x1:a, y1:lo, x2:b, y2:hi};
+                var inner = { lo: line_point(e, pc.lo), hi: line_point(e, pc.hi) };
+                var outer = { lo: line_point(e, pc.lo, pc.thick), hi: line_point(e, pc.hi, pc.thick) };
+                ['lo','hi'].forEach(function(end) {
+                    var x = ends[end];
+                    if (Math.abs(pc[end]-e[end])>EPS || x.adj.e.len<EPS) return;
+                    var square = e.axis!='d' && x.adj.e.axis!='d';
+                    // square inside corners already meet, angled ones need joining
+                    if (!x.convex && square) return;
+                    var t2 = thick_at(x.adj, x.V[0], x.V[1]);
+                    if (square) {
+                        // square corner: run this wall on past the corner by the other wall's thickness
+                        inner[end] = [inner[end][0]+e.ax*x.dir*t2, inner[end][1]+e.ay*x.dir*t2];
+                        outer[end] = [outer[end][0]+e.ax*x.dir*t2, outer[end][1]+e.ay*x.dir*t2];
+                    } else {
+                        var P = miter(x.V, e, pc.thick, x.adj.e, t2);
+                        if (P) outer[end] = P;
+                    }
+                });
+                pc.band = [inner.lo, inner.hi, outer.hi, outer.lo];
             });
         });
 
@@ -500,18 +637,14 @@ var floorplan_model = (function () {
                 var S = pc.other;
                 var wall = {
                     level: R.level, room: R.id, edge: e.i, axis: e.axis, c: e.c,
+                    ax: e.ax, ay: e.ay, mx: e.mx, my: e.my, k: e.k,
                     lo: pc.lo, hi: pc.hi, len: pc.hi-pc.lo, nx: e.nx, ny: e.ny,
                     other: S ? S.id : null, other_edge: S ? pc.edge : null, dist: S ? pc.dist : 0,
                     thick: pc.thick, band: pc.band || null,
                     boundary: null, type: null, orientation: "", item: null, openings: []
                 };
-                if (e.axis=='d') {
-                    wall.x1 = e.x1; wall.y1 = e.y1; wall.x2 = e.x2; wall.y2 = e.y2;
-                } else if (e.axis=='h') {
-                    wall.x1 = pc.lo; wall.x2 = pc.hi; wall.y1 = wall.y2 = e.c;
-                } else {
-                    wall.y1 = pc.lo; wall.y2 = pc.hi; wall.x1 = wall.x2 = e.c;
-                }
+                var a = line_point(e, pc.lo), b = line_point(e, pc.hi);
+                wall.x1 = a[0]; wall.y1 = a[1]; wall.x2 = b[0]; wall.y2 = b[1];
                 walls.push(wall);
 
                 var h = room_height(R);
@@ -536,7 +669,7 @@ var floorplan_model = (function () {
                         // Element already created from the other side
                         for (var z=0; z<shared.length; z++) {
                             var s = shared[z];
-                            if (s.a==S.id && s.b==R.id && s.axis==e.axis && s.lo<pc.hi-EPS && s.hi>pc.lo+EPS) {
+                            if (s.a==S.id && s.b==R.id && Math.abs(s.ax*e.ay-s.ay*e.ax)<0.001 && s.lo<pc.hi-EPS && s.hi>pc.lo+EPS) {
                                 wall.item = s.item;
                                 wall.openings = s.wall.openings;
                                 break;
@@ -546,7 +679,7 @@ var floorplan_model = (function () {
                     }
                     refs = [{room:R.id, boundary:names[S.id]}, {room:S.id, boundary:names[R.id]}];
                     wall.item = add_item({type: wall.type, orientation: "", width: round(wall.len), height: Math.min(h,room_height(S))}, refs);
-                    shared.push({a:R.id, b:S.id, axis:e.axis, lo:pc.lo, hi:pc.hi, item:wall.item, wall:wall});
+                    shared.push({a:R.id, b:S.id, ax:e.ax, ay:e.ay, lo:pc.lo, hi:pc.hi, item:wall.item, wall:wall});
                 } else {
                     if (S) {
                         wall.kind = 'unheated';
@@ -562,15 +695,10 @@ var floorplan_model = (function () {
                 }
 
                 // Windows and doors on this stretch of wall
-                if (e.axis=='d') return;
-                var n = e.axis=='h' ? e.ny : e.nx;
                 plan.openings.forEach(function(op) {
-                    if (used_openings[op.id] || op.level!=R.level || op.axis!=e.axis) return;
-                    var c = e.axis=='h' ? op.y : op.x;
-                    var t = e.axis=='h' ? op.x : op.y;
-                    var s = (c-e.c)*n;
-                    if (s<-OPENING_TOL || s>wall.dist+OPENING_TOL) return;
-                    if (t<pc.lo-EPS || t>pc.hi+EPS) return;
+                    if (used_openings[op.id] || op.level!=R.level) return;
+                    var t = opening_along(op, e, wall.dist);
+                    if (t===null || t<pc.lo-EPS || t>pc.hi+EPS) return;
                     used_openings[op.id] = true;
                     wall.openings.push(op.id);
                     var fallback = op.kind=='door' ? d.door : d.window;
@@ -683,9 +811,9 @@ var floorplan_model = (function () {
         plan.openings.forEach(function(op) {
             if (used_openings[op.id]) return;
             var on_unheated = walls.some(function(w) {
-                return w.kind && w.kind.indexOf('unheated_')==0 && w.level==op.level && w.axis==op.axis &&
-                    Math.abs((w.axis=='h'?op.y:op.x)-w.c)<=OPENING_TOL+w.dist &&
-                    (w.axis=='h'?op.x:op.y)>=w.lo-EPS && (w.axis=='h'?op.x:op.y)<=w.hi+EPS;
+                if (!w.kind || w.kind.indexOf('unheated_')!=0 || w.level!=op.level) return false;
+                var t = opening_along(op, w, w.dist);
+                return t!==null && t>=w.lo-EPS && t<=w.hi+EPS;
             });
             if (!on_unheated) warnings.push("A "+(op.kind||"window")+" is not on a wall and is ignored");
         });
@@ -730,7 +858,7 @@ var floorplan_model = (function () {
             },
             default_ach: 0.5,
             north: 0,
-            grid: 0.1,
+            grid: 0.01,
             wall_gap: 0.35,
             wall_thickness: { external: 0.3, party: 0.2 },
             levels: [{ id: "L1", name: "Ground floor", height: 2.4 }],
@@ -801,7 +929,7 @@ var floorplan_model = (function () {
         plan.default_ach = 0.6;
         plan.grid = 0.01;
         plan.wall_gap = 0.6;
-        plan.wall_thickness = { external: 0.55, party: 0.34 };
+        plan.wall_thickness = { external: 0.55, party: 0.5 };
         plan.levels = [
             { id: "L1", name: "Ground floor", height: 2.4 },
             { id: "L2", name: "First floor", height: 2.42 }
@@ -829,7 +957,7 @@ var floorplan_model = (function () {
 
         var party = { boundary: "neighbour", ext_type: "Wall:Party" };
 
-        var living = room("L1", "Living room", [[0.33,4.37],[3.69,4.37],[3.69,11.18],[2.92,11.18],[2.92,12.03],[1.16,12.03],[1.16,11.18],[0.33,11.18]], {
+        var living = room("L1", "Living room", [[0.33,4.37],[3.69,4.37],[3.69,12.03],[1.16,12.03],[1.16,11.18],[0.33,11.18]], {
             temperature: 20, floor: { type: "Floor:InsulatedGround" },
             radiators: [rad("Double Panel Convector 1200x600",2146), rad("Double Panel Convector 1200x600",2146), rad("Double Panel Convector 1200x600",2146)]
         });
@@ -845,10 +973,9 @@ var floorplan_model = (function () {
         // Party walls with the houses either side
         [living, bed1, bed2].forEach(function(r){ walls_on(r, 'v', 0.33, party); });
         [hall, kitchen, landing, study, bathroom].forEach(function(r){ walls_on(r, 'v', 4.80, party); });
-        // Thicker stone gable at the end of the kitchen and the thinner walls of the bay
+        // Thicker stone gable at the end of the kitchen and the thinner front wall of the bay and porch
         walls_on(kitchen, 'h', 0.80, { thickness: 0.80 });
         walls_on(living, 'v', 1.16, { thickness: 0.29 });
-        walls_on(living, 'v', 2.92, { thickness: 0.29 });
         walls_on(living, 'h', 12.03, { thickness: 0.29 });
         walls_on(hall, 'h', 12.03, { thickness: 0.29 });
         // Wide openings through the old back wall, modelled as in the table example
@@ -897,6 +1024,11 @@ var floorplan_model = (function () {
         bbox: bbox,
         centroid: centroid,
         intersection_area: intersection_area,
+        along: along,
+        line_point: line_point,
+        opening_dir: opening_dir,
+        opening_along: opening_along,
+        is_simple: is_simple,
         edges: edges,
         is_orthogonal: is_orthogonal,
         clean_polygon: clean_polygon,

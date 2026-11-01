@@ -14,7 +14,10 @@ var ICONS = {
     window: "M3 9h18v6H3z M3 12h18",
     door: "M4 20V5 M4 5a15 15 0 0 1 15 15 M2 20h20",
     undo: "M9 14L4 9l5-5 M4 9h11a5 5 0 0 1 0 10h-3",
-    redo: "M15 14l5-5-5-5 M20 9H9a5 5 0 0 0 0 10h3"
+    redo: "M15 14l5-5-5-5 M20 9H9a5 5 0 0 0 0 10h3",
+    split: "M9 6a3 3 0 1 1-6 0a3 3 0 1 1 6 0 M9 18a3 3 0 1 1-6 0a3 3 0 1 1 6 0 M20 4L8.1 15.9 M14.5 14.5L20 20 M8.1 8.1L12 12",
+    play: "M7 4.5l12 7.5-12 7.5z",
+    pause: "M8 5v14 M16 5v14"
 };
 
 function load_saved_plan() {
@@ -68,6 +71,12 @@ function dist_to_segment(px, py, x1, y1, x2, y2) {
     return Math.sqrt((px-cx)*(px-cx)+(py-cy)*(py-cy));
 }
 
+// Scissors cursor for the split tool, white outline so it shows on any fill
+var SPLIT_CURSOR = 'url("data:image/svg+xml,' + encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-linecap="round">' +
+    '<path d="'+ICONS.split+'" stroke="#fff" stroke-width="4"/><path d="'+ICONS.split+'" stroke="#1f2933" stroke-width="1.8"/></svg>') +
+    '") 12 12, crosshair';
+
 var saved_plan = load_saved_plan();
 var first_visit = !saved_plan;
 
@@ -87,10 +96,12 @@ var app = new Vue({
         hover: null,
         draft: null,
         ghost: null,
+        split_ghost: null,
         guides: [],
         calc: null,
         tab: 'details',
         show_heat: true,
+        solver: { running: false, steps: 0, balanced: false },
         show_intro: first_visit,
         dim_edit: null,
         history: [],
@@ -105,7 +116,8 @@ var app = new Vue({
             { id:'select', label:'Select', key:'V', title:'Select, move and resize (V)' },
             { id:'room', label:'Room', key:'R', title:'Drag to draw a room (R)' },
             { id:'window', label:'Window', key:'W', title:'Click on a wall to add a window (W)' },
-            { id:'door', label:'Door', key:'D', title:'Click on a wall to add a door (D)' }
+            { id:'door', label:'Door', key:'D', title:'Click on a wall to add a door (D)' },
+            { id:'split', label:'Split', key:'S', title:'Click on a wall to split it, then drag either part to make a step (S)' }
         ]
     },
 
@@ -151,8 +163,13 @@ var app = new Vue({
         },
         level_opening_shapes: function() {
             var self = this;
-            return this.level_openings.map(function(op){ return { op: op, rect: self.opening_rect(op) }; })
+            return this.level_openings.map(function(op){ return { op: op, rect: self.opening_rect(op), jambs: self.opening_jambs(op), lines: self.opening_lines(op) }; })
                 .filter(function(o){ return o.rect; });
+        },
+        // Windows and doors not in a wall with thickness, drawn as a line instead
+        level_loose_openings: function() {
+            var shaped = this.level_opening_shapes.map(function(o){ return o.op; });
+            return this.level_openings.filter(function(op){ return shaped.indexOf(op)==-1; });
         },
         selected_room: function() {
             if (!this.sel || this.sel.kind!='room') return null;
@@ -168,7 +185,7 @@ var app = new Vue({
             if (!s || s.kind!='wall') return null;
             var list = this.analysis.walls.filter(function(w){ return w.room==s.room && w.edge==s.edge; });
             var hit = list.filter(function(w) {
-                var t = w.axis=='h' ? s.x : s.y;
+                var t = M.along(w, s.x, s.y);
                 return t>=w.lo-0.001 && t<=w.hi+0.001;
             })[0];
             return hit || list[0] || null;
@@ -181,7 +198,7 @@ var app = new Vue({
             var r = this.selected_room;
             if (!r || this.drag) return [];
             var self = this;
-            return M.edges(r.points).map(function(e) {
+            return M.edges(r.points).filter(function(e){ return e.len>M.EPS; }).map(function(e) {
                 var mx = (e.x1+e.x2)/2, my = (e.y1+e.y2)/2;
                 var text = e.len.toFixed(2)+" m";
                 return {
@@ -223,14 +240,26 @@ var app = new Vue({
             if (this.drag && this.drag.type=='pan') return 'grabbing';
             if (this.space_down) return 'grab';
             if (this.tool=='room') return 'crosshair';
+            if (this.tool=='split') return SPLIT_CURSOR;
             if (this.tool=='window' || this.tool=='door') return this.ghost ? 'copy' : 'not-allowed';
             var h = this.hover;
             if (!h) return 'default';
             if (h.kind=='vertex') return 'move';
-            if (h.kind=='edge') return h.axis=='h' ? 'ns-resize' : (h.axis=='v' ? 'ew-resize' : 'pointer');
+            if (h.kind=='edge') return h.axis=='h' ? 'ns-resize' : (h.axis=='v' ? 'ew-resize' : 'move');
             if (h.kind=='opening') return 'grab';
             if (h.kind=='room') return 'move';
             return 'default';
+        },
+        // Circle on the corner or split point under the pointer, or being dragged
+        vertex_marker: function() {
+            var d = this.drag;
+            if (d && d.type=='vertex') {
+                var q = d.room.points[d.index];
+                return q ? { x: q[0], y: q[1] } : null;
+            }
+            var h = this.hover;
+            if (!d && this.tool=='select' && h && h.kind=='vertex') return { x: h.x, y: h.y };
+            return null;
         },
         hover_room: function() {
             return this.hover && this.hover.kind=='room' ? this.hover.room.id : null;
@@ -254,6 +283,8 @@ var app = new Vue({
 
     watch: {
         analysis: function() {
+            // the plan changed under the solver, start again from the new plan
+            if (this.solver.running) this.stop_solver(false);
             if (!this.drag) this.schedule_calc();
         }
     },
@@ -313,7 +344,7 @@ var app = new Vue({
             }
             var pts = [];
             rooms.forEach(function(r){ pts = pts.concat(r.points); });
-            this.level_bands.forEach(function(w){ pts.push([w.band.x1,w.band.y1],[w.band.x2,w.band.y2]); });
+            this.level_bands.forEach(function(w){ pts = pts.concat(w.band); });
             var b = M.bbox(pts);
             var w = Math.max(b.x2-b.x1, 1), h = Math.max(b.y2-b.y1, 1);
             var s = Math.min((this.size.w-120)/w, (this.size.h-170)/h);
@@ -381,6 +412,68 @@ var app = new Vue({
         },
 
         // ------------------------------------------------------------------
+        // Solve room temperatures
+        //
+        // Each step moves every room's temperature by the difference between
+        // its emitter output and heat loss (as in the table view), so rooms
+        // without radiators settle at the temperature their neighbours keep them at
+        // ------------------------------------------------------------------
+        toggle_solver: function() {
+            if (this.solver.running) this.stop_solver(true);
+            else this.start_solver();
+        },
+        start_solver: function() {
+            clearTimeout(this.calc_timer);
+            clearTimeout(this.solver_timer);
+            this.solver_config = M.clone(this.analysis.config);
+            this.solver.running = true;
+            this.solver.balanced = false;
+            this.solver.steps = 0;
+            var self = this;
+            requestAnimationFrame(function(){ self.solver_frame(); });
+        },
+        solver_frame: function() {
+            if (!this.solver.running) return;
+            var cfg = this.solver_config, change = 0;
+            config = cfg;
+            for (var i=0; i<2; i++) {
+                calculate();
+                for (var z in cfg.rooms) {
+                    var t = cfg.rooms[z].energy / cfg.JK;
+                    change = Math.max(change, Math.abs(t-cfg.rooms[z].temperature));
+                    cfg.rooms[z].temperature = t;
+                }
+                this.solver.steps++;
+            }
+            this.calc = Object.freeze(M.clone(cfg));
+            if (change<0.0005 || this.solver.steps>=5000) {
+                this.solver.balanced = change<0.0005;
+                this.stop_solver(true);
+                return;
+            }
+            var self = this;
+            requestAnimationFrame(function(){ self.solver_frame(); });
+        },
+        // Stopping keeps the temperatures reached so far, undo puts the old ones back
+        stop_solver: function(keep) {
+            this.solver.running = false;
+            var cfg = this.solver_config;
+            this.solver_config = null;
+            var self = this;
+            clearTimeout(this.solver_timer);
+            this.solver_timer = setTimeout(function(){ self.solver.balanced = false; self.solver.steps = 0; }, keep ? 5000 : 0);
+            if (!keep || !cfg) return;
+            var names = this.analysis.names;
+            this.plan.rooms.forEach(function(r) {
+                var cr = cfg.rooms[names[r.id]];
+                if (!r.heated || !cr) return;
+                r.temperature = M.round(cr.temperature, 2);
+                r.temp_auto = false;
+            });
+            this.commit();
+        },
+
+        // ------------------------------------------------------------------
         // Display helpers
         // ------------------------------------------------------------------
         fmt: function(v, dp) {
@@ -416,7 +509,7 @@ var app = new Vue({
                 lines.push({text: "unheated", cls: 'sub'});
             } else if (rc) {
                 lines.push({text: this.fmt(rc.heat)+" W", cls: 'watts'});
-                if (height_px>70) lines.push({text: r.temperature+"°C · "+this.fmt(rc.area,1)+" m²", cls: 'sub'});
+                if (height_px>70) lines.push({text: this.fmt(rc.temperature,1)+"°C · "+this.fmt(rc.area,1)+" m²", cls: 'sub'});
             }
             if (width_px<60 || height_px<34) lines = lines.slice(0,1);
             var y0 = this.sy(c[1]) - (lines.length-1)*8;
@@ -426,17 +519,13 @@ var app = new Vue({
             if (w.kind=='external') return w.boundary=='external' ? 'external' : 'boundary';
             return w.kind;
         },
-        rect_points: function(b) {
-            return this.poly([[b.x1,b.y1],[b.x2,b.y1],[b.x2,b.y2],[b.x1,b.y2]]);
-        },
         // The wall a window or door sits in, preferring the heated side
         opening_host: function(op) {
             var best = null;
             this.level_walls.forEach(function(w) {
-                if (w.axis!=op.axis || !w.band) return;
-                var c = w.axis=='h' ? op.y : op.x, t = w.axis=='h' ? op.x : op.y;
-                var s = (c-w.c)*(w.axis=='h' ? w.ny : w.nx);
-                if (s<-0.03 || s>w.dist+0.03 || t<w.lo-0.001 || t>w.hi+0.001) return;
+                if (!w.band) return;
+                var t = M.opening_along(op, w, w.dist);
+                if (t===null || t<w.lo-0.001 || t>w.hi+0.001) return;
                 if (!best || (best.item===null && w.item!==null)) best = w;
             });
             return best;
@@ -445,15 +534,33 @@ var app = new Vue({
         opening_rect: function(op) {
             var w = this.opening_host(op);
             if (!w) return null;
-            var h = op.width/2, n = w.axis=='h' ? w.ny : w.nx;
-            var a = Math.min(w.c, w.c+n*w.thick), b = Math.max(w.c, w.c+n*w.thick);
-            if (op.axis=='h') return { x1: op.x-h, y1: a, x2: op.x+h, y2: b };
-            return { x1: a, y1: op.y-h, x2: b, y2: op.y+h };
+            var t = M.along(w, op.x, op.y), h = op.width/2;
+            return [M.line_point(w, t-h), M.line_point(w, t+h), M.line_point(w, t+h, w.thick), M.line_point(w, t-h, w.thick)];
+        },
+        // Faint double line down the middle of a window or door in an outside wall,
+        // left out when the wall is drawn too thin for it to read
+        opening_lines: function(op) {
+            var w = this.opening_host(op);
+            if (!w || w.other || w.thick*this.view.scale<12) return [];
+            var t = M.along(w, op.x, op.y), h = op.width/2, self = this;
+            var gap = 1.5/this.view.scale;
+            return [w.thick/2-gap, w.thick/2+gap].map(function(d) {
+                var a = M.line_point(w, t-h, d), b = M.line_point(w, t+h, d);
+                return { x1: self.sx(a[0]), y1: self.sy(a[1]), x2: self.sx(b[0]), y2: self.sy(b[1]) };
+            });
+        },
+        // Lines across the wall at each end of a window or door, its only outline so the
+        // cut-out sits flush with the faces of the wall
+        opening_jambs: function(op) {
+            var r = this.opening_rect(op), self = this;
+            if (!r) return [];
+            return [[r[0],r[3]], [r[1],r[2]]].map(function(l) {
+                return { x1: self.sx(l[0][0]), y1: self.sy(l[0][1]), x2: self.sx(l[1][0]), y2: self.sy(l[1][1]) };
+            });
         },
         opening_line: function(op) {
-            var h = op.width/2;
-            if (op.axis=='h') return { x1: this.sx(op.x-h), y1: this.sy(op.y), x2: this.sx(op.x+h), y2: this.sy(op.y) };
-            return { x1: this.sx(op.x), y1: this.sy(op.y-h), x2: this.sx(op.x), y2: this.sy(op.y+h) };
+            var d = M.opening_dir(op), h = op.width/2;
+            return { x1: this.sx(op.x-d[0]*h), y1: this.sy(op.y-d[1]*h), x2: this.sx(op.x+d[0]*h), y2: this.sy(op.y+d[1]*h) };
         },
         wall_label: function(w) {
             if (!w) return "";
@@ -524,6 +631,10 @@ var app = new Vue({
         // ------------------------------------------------------------------
         // Snapping
         // ------------------------------------------------------------------
+        // Snap step in metres, millimetres when the snap grid is off
+        snap_step: function() {
+            return this.plan.grid>0 ? 1*this.plan.grid : 0.001;
+        },
         snap_candidates: function(exclude) {
             var xs = [], ys = [];
             this.level_rooms.concat(this.ghost_rooms).forEach(function(r) {
@@ -542,7 +653,7 @@ var app = new Vue({
                 this.guides.push({ axis: axis, v: best });
                 return best;
             }
-            var g = this.plan.grid>0 ? this.plan.grid : 0.1;
+            var g = this.snap_step();
             return M.round(Math.round(v/g)*g);
         },
         snap_point: function(p, cands, free) {
@@ -563,7 +674,7 @@ var app = new Vue({
                 this.guides.push({ axis: axis, v: line });
                 return d+best;
             }
-            var g = this.plan.grid>0 ? this.plan.grid : 0.1;
+            var g = this.snap_step();
             return M.round(Math.round(d/g)*g);
         },
 
@@ -572,24 +683,28 @@ var app = new Vue({
         // ------------------------------------------------------------------
         hit_test: function(p) {
             var tol = 7/this.view.scale;
-            var r = this.selected_room;
-            if (r && r.level==this.level.id) {
-                for (var i=0; i<r.points.length; i++) {
-                    var dx = r.points[i][0]-p.x, dy = r.points[i][1]-p.y;
-                    if (Math.sqrt(dx*dx+dy*dy)<tol*1.3) return { kind:'vertex', room:r, index:i };
-                }
-            }
+            // corners and split points of any room, the selected room first
+            var rooms = this.level_rooms.slice(), r = this.selected_room;
+            if (r && rooms.indexOf(r)!=-1) { rooms.splice(rooms.indexOf(r),1); rooms.unshift(r); }
+            var best = null;
+            rooms.forEach(function(room) {
+                room.points.forEach(function(q, i) {
+                    var dx = q[0]-p.x, dy = q[1]-p.y, d = Math.sqrt(dx*dx+dy*dy);
+                    if (d<tol*1.3 && (!best || d<best.d-M.EPS)) best = { kind:'vertex', room:room, index:i, x:q[0], y:q[1], d:d };
+                });
+            });
+            if (best) return best;
             var ops = this.level_openings;
             for (var i=ops.length-1; i>=0; i--) {
                 var l = this.opening_line(ops[i]);
-                var s = this.view.scale;
                 var d = dist_to_segment(p.px, p.py, l.x1, l.y1, l.x2, l.y2);
                 var b = this.opening_rect(ops[i]);
-                if (d<6 || (b && p.x>b.x1 && p.x<b.x2 && p.y>b.y1 && p.y<b.y2)) return { kind:'opening', opening:ops[i] };
+                if (d<6 || (b && M.point_in_polygon(p.x, p.y, b))) return { kind:'opening', opening:ops[i] };
             }
             var edge_hits = [];
             this.level_rooms.forEach(function(room) {
                 M.edges(room.points).forEach(function(e) {
+                    if (e.len<M.EPS) return;
                     var d = dist_to_segment(p.x, p.y, e.x1, e.y1, e.x2, e.y2);
                     if (d<tol) edge_hits.push({ kind:'edge', room:room, edge:e.i, axis:e.axis, d:d,
                         inside: M.point_in_polygon(p.x, p.y, room.points) });
@@ -609,8 +724,8 @@ var app = new Vue({
             }
             var bands = this.level_bands;
             for (var i=bands.length-1; i>=0; i--) {
-                var w = bands[i], b = w.band;
-                if (w.axis=='d' || p.x<b.x1 || p.x>b.x2 || p.y<b.y1 || p.y>b.y2) continue;
+                var w = bands[i];
+                if (!M.point_in_polygon(p.x, p.y, w.band)) continue;
                 return { kind:'edge', room:this.room_by_id(w.room), edge:w.edge, axis:w.axis, wall:w };
             }
             return null;
@@ -621,35 +736,42 @@ var app = new Vue({
             var tol = 14/this.view.scale, best = null;
             this.level_rooms.forEach(function(room) {
                 M.edges(room.points).forEach(function(e) {
-                    if (e.axis=='d') return;
+                    if (e.len<M.EPS) return;
                     var d = dist_to_segment(p.x, p.y, e.x1, e.y1, e.x2, e.y2);
                     if (d<tol && (!best || d<best.d)) best = { d:d, e:e, room:room };
                 });
             });
             if (!best) return null;
-            var e = best.e;
-            var t = e.axis=='h' ? p.x : p.y;
-            t = Math.round(t/0.05)*0.05;
+            return this.point_on_edge(best.e, M.along(best.e, p.x, p.y), width);
+        },
+        // Where a window or door of the given width centred near t sits on an edge or wall
+        point_on_edge: function(e, t, width) {
+            var g = this.snap_step();
+            t = Math.round(t/g)*g;
             var half = width/2;
             if (e.hi-e.lo>width) t = Math.max(e.lo+half, Math.min(e.hi-half, t));
             else t = (e.lo+e.hi)/2;
-            t = M.round(t);
-            return e.axis=='h' ? { x:t, y:e.c, axis:'h' } : { x:e.c, y:t, axis:'v' };
+            var q = M.line_point(e, t);
+            var pos = { x: M.round(q[0]), y: M.round(q[1]), axis: e.axis };
+            if (e.axis=='h') pos.y = e.c;
+            if (e.axis=='v') pos.x = e.c;
+            if (e.axis=='d') pos.dir = [e.ax, e.ay];
+            return pos;
         },
 
         // Edges lying on the same wall line, so a shared wall moves as one
         linked_edges: function(room, index) {
             var first = M.edges(room.points)[index];
             var result = [{ room: room, edge: index, e: first }];
-            if (first.axis=='d') return result;
+            if (first.len<M.EPS) return result;
             var rooms = this.level_rooms;
             var queue = [result[0]];
             while (queue.length) {
                 var cur = queue.pop();
                 rooms.forEach(function(S) {
                     M.edges(S.points).forEach(function(f) {
-                        if (f.axis!=cur.e.axis || Math.abs(f.c-cur.e.c)>M.EPS) return;
-                        if (f.nx!=-cur.e.nx || f.ny!=-cur.e.ny) return;
+                        if (f.len<M.EPS || Math.abs(f.nx+cur.e.nx)>0.001 || Math.abs(f.ny+cur.e.ny)>0.001) return;
+                        if (Math.abs(f.k-cur.e.k)>M.EPS) return;
                         if (Math.min(f.hi,cur.e.hi)-Math.max(f.lo,cur.e.lo)<0.01) return;
                         if (result.some(function(x){ return x.room===S && x.edge==f.i; })) return;
                         var item = { room: S, edge: f.i, e: f };
@@ -707,7 +829,7 @@ var app = new Vue({
                     if (seen[o.opening.id]) return;
                     seen[o.opening.id] = true;
                     d.ops.push({ op: o.opening, room: r, edge: o.edge, dist: o.dist });
-                    d.op_orig[o.opening.id] = { x: o.opening.x, y: o.opening.y };
+                    d.op_orig[o.opening.id] = { x: o.opening.x, y: o.opening.y, axis: o.opening.axis, dir: o.opening.dir };
                 });
             });
             for (var z in extra) d[z] = extra[z];
@@ -735,6 +857,13 @@ var app = new Vue({
                 return;
             }
 
+            if (this.tool=='split') {
+                var sp = this.split_position(p);
+                if (sp) this.split_edge(sp.room, sp.edge, sp.x, sp.y);
+                this.split_ghost = this.split_position(p);
+                return;
+            }
+
             if (this.tool=='window' || this.tool=='door') {
                 var pos = this.opening_position(p, this.last_size[this.tool].width);
                 if (!pos) return;
@@ -744,6 +873,7 @@ var app = new Vue({
                     width: this.last_size[this.tool].width, height: this.last_size[this.tool].height,
                     type: null
                 };
+                if (pos.dir) op.dir = pos.dir;
                 this.plan.openings.push(op);
                 this.select({ kind:'opening', id:op.id });
                 this.commit();
@@ -756,7 +886,17 @@ var app = new Vue({
                 return;
             }
             if (h.kind=='vertex') {
-                this.drag = this.begin_shape_drag('vertex', [h.room], p, { room:h.room, index:h.index });
+                // corners in the same place (a split point, or rooms that share a corner) move together
+                var targets = this.vertex_targets(h, e.altKey);
+                this.drag = this.begin_shape_drag('vertex', targets.map(function(t){ return t.room; }), p,
+                    { room:h.room, index:h.index, vx:h.x, vy:h.y, targets:targets });
+                // line up with the room's other corners as well, so walls snap back square
+                var cands = this.drag.cands;
+                targets.forEach(function(t) {
+                    t.room.points.forEach(function(q, i) {
+                        if (t.indices.indexOf(i)==-1) { cands.xs.push(q[0]); cands.ys.push(q[1]); }
+                    });
+                });
             } else if (h.kind=='opening') {
                 this.select({ kind:'opening', id:h.opening.id });
                 this.drag = { type:'opening', op:h.opening, start:p, moved:false };
@@ -786,7 +926,9 @@ var app = new Vue({
                     this.hover = h;
                 } else if (this.tool=='window' || this.tool=='door') {
                     var pos = this.opening_position(p, this.last_size[this.tool].width);
-                    this.ghost = pos ? { kind:this.tool, x:pos.x, y:pos.y, axis:pos.axis, width:this.last_size[this.tool].width } : null;
+                    this.ghost = pos ? { kind:this.tool, x:pos.x, y:pos.y, axis:pos.axis, dir:pos.dir, width:this.last_size[this.tool].width } : null;
+                } else if (this.tool=='split') {
+                    this.split_ghost = this.split_position(p);
                 } else {
                     this.hover = null;
                 }
@@ -824,24 +966,30 @@ var app = new Vue({
                 this.update_dragged_openings(d);
             }
             else if (d.type=='edge') {
-                if (d.axis=='d') return;
+                if (d.axis=='d') {
+                    // angled walls move square to themselves
+                    var e0 = M.edges(d.origs[d.room.id])[d.edge];
+                    var g = this.snap_step();
+                    var dist = (p.x-d.start.x)*e0.nx + (p.y-d.start.y)*e0.ny;
+                    if (!free) dist = Math.round(dist/g)*g;
+                    this.apply_edge_shift(d, e0.nx*dist, e0.ny*dist);
+                    return;
+                }
                 var first = M.edges(d.origs[d.room.id])[d.edge];
                 var raw = first.c + (d.axis=='h' ? p.y-d.start.y : p.x-d.start.x);
                 var c = this.snap_value(raw, d.axis=='h' ? d.cands.ys : d.cands.xs, d.axis=='h' ? 'y' : 'x', free);
                 this.apply_edge_coordinate(d, c);
             }
             else if (d.type=='vertex') {
-                var s = this.snap_point(p, d.cands, free);
-                d.room.points = this.move_vertex(d.origs[d.room.id], d.index, s.x, s.y);
+                var s = this.snap_point({ x: d.vx+p.x-d.start.x, y: d.vy+p.y-d.start.y }, d.cands, free);
+                d.targets.forEach(function(t) {
+                    t.room.points = self.move_vertex(d.origs[t.room.id], t.indices, s.x, s.y, e.shiftKey);
+                });
                 this.update_dragged_openings(d);
             }
             else if (d.type=='opening') {
                 var pos = this.opening_position(p, d.op.width);
-                if (pos) {
-                    d.op.x = pos.x;
-                    d.op.y = pos.y;
-                    d.op.axis = pos.axis;
-                }
+                if (pos) this.place_opening(d.op, pos);
             }
         },
 
@@ -881,19 +1029,26 @@ var app = new Vue({
             for (var id in d.origs) rooms.push(this.room_by_id(id));
             var cleaned = rooms.map(function(r) {
                 var pts = M.clean_polygon(r.points);
-                if (pts.length<4 || M.area(pts)<0.05) ok = false;
+                if (pts.length<3 || M.area(pts)<0.05 || !M.is_simple(pts)) ok = false;
                 return pts;
             });
             if (!ok) {
                 rooms.forEach(function(r){ r.points = d.origs[r.id]; });
-                d.ops.forEach(function(o){ o.op.x = d.op_orig[o.op.id].x; o.op.y = d.op_orig[o.op.id].y; });
+                d.ops.forEach(function(o){ self.restore_opening(o.op, d.op_orig[o.op.id]); });
                 return;
             }
-            rooms.forEach(function(r, i) {
-                r.edges = M.remap_edge_props([{ points: r.points, edges: r.edges }], cleaned[i]);
-                r.points = cleaned[i];
-            });
+            rooms.forEach(function(r, i){ self.set_room_points(r, cleaned[i]); });
             this.commit();
+        },
+
+        // Replace a room outline with a tidied version of itself. Wall settings stay with
+        // their wall, by position in the outline when no corners were removed.
+        set_room_points: function(r, cleaned) {
+            var same = cleaned.length==r.points.length && cleaned.every(function(q,i) {
+                return Math.abs(q[0]-r.points[i][0])<0.001 && Math.abs(q[1]-r.points[i][1])<0.001;
+            });
+            if (!same) r.edges = M.remap_edge_props([{ points: r.points, edges: r.edges }], cleaned);
+            r.points = cleaned;
         },
 
         on_wheel: function(e) {
@@ -910,45 +1065,78 @@ var app = new Vue({
             this.drag = { type:'north', start:this.world(e), moved:true };
         },
 
-        // Keep each window and door at the same distance along its wall
+        // Keep each window and door at the same distance along its wall, turning
+        // with the wall if it is now at a different angle
         update_dragged_openings: function(d) {
+            var self = this;
             d.ops.forEach(function(o) {
                 var e = M.edges(o.room.points)[o.edge];
-                if (!e || e.axis=='d' || e.axis!=o.op.axis) return;
-                var start = e.axis=='h' ? e.x1 : e.y1, end = e.axis=='h' ? e.x2 : e.y2;
-                var t = start + (end>=start ? 1 : -1)*o.dist;
-                t = Math.max(e.lo, Math.min(e.hi, t));
-                if (e.axis=='h') { o.op.x = M.round(t); o.op.y = e.c; }
-                else { o.op.y = M.round(t); o.op.x = e.c; }
+                if (!e || e.len<M.EPS) return;
+                var dist = Math.max(0, Math.min(e.len, o.dist));
+                var pos = { x: M.round(e.x1+e.ux*dist), y: M.round(e.y1+e.uy*dist), axis: e.axis };
+                if (e.axis=='h') pos.y = e.c;
+                if (e.axis=='v') pos.x = e.c;
+                if (e.axis=='d') pos.dir = [e.ax, e.ay];
+                self.place_opening(o.op, pos);
             });
+        },
+        place_opening: function(op, pos) {
+            op.x = pos.x;
+            op.y = pos.y;
+            op.axis = pos.axis;
+            if (pos.dir) this.$set(op, 'dir', pos.dir);
+            else if (op.dir) this.$delete(op, 'dir');
+        },
+        restore_opening: function(op, orig) {
+            this.place_opening(op, orig);
         },
 
         // Move the dragged edge to c, and the edges linked to it by the same amount
         apply_edge_coordinate: function(d, c) {
             var delta = c - M.edges(d.origs[d.room.id])[d.edge].c;
+            if (d.axis=='h') this.apply_edge_shift(d, 0, delta);
+            else this.apply_edge_shift(d, delta, 0);
+        },
+        apply_edge_shift: function(d, dx, dy) {
             d.linked.forEach(function(l) {
                 var pts = (l.room.id in d.origs) ? M.clone(l.room.points) : null;
                 if (!pts) return;
                 var n = pts.length, i = l.edge, j = (l.edge+1)%n;
-                var k = d.axis=='h' ? 1 : 0;
-                var v = M.round(l.e.c + delta);
-                pts[i][k] = v;
-                pts[j][k] = v;
+                pts[i] = [M.round(l.e.x1+dx), M.round(l.e.y1+dy)];
+                pts[j] = [M.round(l.e.x2+dx), M.round(l.e.y2+dy)];
                 l.room.points = pts;
             });
             this.update_dragged_openings(d);
         },
 
-        // Move a vertex keeping the neighbouring walls square
-        move_vertex: function(orig, index, x, y) {
+        // Corners at the same place as a vertex: in this room only, or in every room on the floor
+        vertex_targets: function(h, only_this) {
+            var rooms = only_this ? [h.room] : this.level_rooms, targets = [];
+            rooms.forEach(function(r) {
+                var indices = [];
+                r.points.forEach(function(q, i) {
+                    if (Math.abs(q[0]-h.x)<M.EPS && Math.abs(q[1]-h.y)<M.EPS) indices.push(i);
+                });
+                if (indices.length) targets.push({ room: r, indices: indices });
+            });
+            return targets;
+        },
+
+        // Move a corner (or the points of a split, which sit together) anywhere, so the
+        // walls either side can end up at an angle. Square keeps the walls either side
+        // square to the grid by moving the corners next to it as well.
+        move_vertex: function(orig, indices, x, y, square) {
             var pts = M.clone(orig), n = pts.length;
-            var prev = (index+n-1)%n, next = (index+1)%n;
-            var ortho = M.is_orthogonal(orig);
-            pts[index] = [x, y];
-            if (ortho) {
-                if (Math.abs(orig[prev][1]-orig[index][1])<M.EPS) pts[prev][1] = y; else pts[prev][0] = x;
-                if (Math.abs(orig[next][1]-orig[index][1])<M.EPS) pts[next][1] = y; else pts[next][0] = x;
-            }
+            indices.forEach(function(i){ pts[i] = [x, y]; });
+            if (!square) return pts;
+            var first = indices.filter(function(i){ return indices.indexOf((i+n-1)%n)==-1; })[0];
+            var last = indices.filter(function(i){ return indices.indexOf((i+1)%n)==-1; })[0];
+            [[(first+n-1)%n, first], [(last+1)%n, last]].forEach(function(pair) {
+                var k = pair[0], v = orig[pair[1]];
+                if (indices.indexOf(k)!=-1) return;
+                if (Math.abs(orig[k][1]-v[1])<M.EPS) pts[k][1] = y;
+                else if (Math.abs(orig[k][0]-v[0])<M.EPS) pts[k][0] = x;
+            });
             return pts;
         },
 
@@ -995,21 +1183,18 @@ var app = new Vue({
             linked.forEach(function(l){ if (rooms.indexOf(l.room)==-1) rooms.push(l.room); });
             var d = this.begin_shape_drag('edge', rooms, {x:0,y:0}, { room:room, edge:next, axis:ne.axis, linked:linked });
             this.apply_edge_coordinate(d, c);
-            var ok = true;
+            var ok = true, self = this;
             var cleaned = rooms.map(function(r) {
                 var cp = M.clean_polygon(r.points);
-                if (cp.length<4 || M.area(cp)<0.05) ok = false;
+                if (cp.length<3 || M.area(cp)<0.05 || !M.is_simple(cp)) ok = false;
                 return cp;
             });
             if (!ok) {
                 rooms.forEach(function(r){ r.points = d.origs[r.id]; });
-                d.ops.forEach(function(o){ o.op.x = d.op_orig[o.op.id].x; o.op.y = d.op_orig[o.op.id].y; });
+                d.ops.forEach(function(o){ self.restore_opening(o.op, d.op_orig[o.op.id]); });
                 return;
             }
-            rooms.forEach(function(r, i) {
-                r.edges = M.remap_edge_props([{ points: r.points, edges: r.edges }], cleaned[i]);
-                r.points = cleaned[i];
-            });
+            rooms.forEach(function(r, i){ self.set_room_points(r, cleaned[i]); });
             this.commit();
         },
 
@@ -1033,6 +1218,7 @@ var app = new Vue({
             else if (k=='r') this.set_tool('room');
             else if (k=='w') this.set_tool('window');
             else if (k=='d') this.set_tool('door');
+            else if (k=='s') this.set_tool('split');
             else if (k=='f') this.fit();
             else if (k=='+' || k=='=') this.zoom(1.25);
             else if (k=='-') this.zoom(0.8);
@@ -1044,7 +1230,7 @@ var app = new Vue({
             else if (e.key=='Delete' || e.key=='Backspace') { e.preventDefault(); this.delete_selection(); }
             else if (e.key.indexOf('Arrow')==0 && this.selected_room) {
                 e.preventDefault();
-                var step = (this.plan.grid>0 ? this.plan.grid : 0.1)*(e.shiftKey ? 10 : 1);
+                var step = (this.plan.grid>0 ? this.plan.grid : 0.01)*(e.shiftKey ? 10 : 1);
                 var dx = e.key=='ArrowLeft' ? -step : (e.key=='ArrowRight' ? step : 0);
                 var dy = e.key=='ArrowUp' ? -step : (e.key=='ArrowDown' ? step : 0);
                 this.nudge(this.selected_room, dx, dy);
@@ -1057,6 +1243,7 @@ var app = new Vue({
         set_tool: function(t) {
             this.tool = t;
             this.ghost = null;
+            this.split_ghost = null;
             this.hover = null;
             this.draft = null;
         },
@@ -1157,7 +1344,8 @@ var app = new Vue({
             }
             var merged = M.union(rooms.map(function(r){ return r.points; }));
             if (!merged) {
-                alert("Rooms need to touch or overlap to merge into one room");
+                alert(rooms.every(function(r){ return M.is_orthogonal(r.points); }) ?
+                    "Rooms need to touch or overlap to merge into one room" : "Rooms with angled walls can not be merged yet");
                 return;
             }
             var keep = rooms[0];
@@ -1201,6 +1389,63 @@ var app = new Vue({
             if (Object.keys(p).length) edges[edge] = p; else delete edges[edge];
             room.edges = edges;
         },
+        // Where the split tool would cut a wall near p, or null
+        split_position: function(p) {
+            var tol = 14/this.view.scale, best = null, self = this;
+            this.level_rooms.forEach(function(room) {
+                M.edges(room.points).forEach(function(e) {
+                    if (e.len<M.EPS) return;
+                    var d = dist_to_segment(p.x, p.y, e.x1, e.y1, e.x2, e.y2);
+                    if (d>=tol || (best && d>=best.d)) return;
+                    var P = self.split_point(e, p.x, p.y);
+                    if (P) best = { d:d, room:room, edge:e.i, axis:e.axis, nx:e.nx, ny:e.ny, x:P[0], y:P[1] };
+                });
+            });
+            return best;
+        },
+        // Point on an edge nearest x,y, snapped to the grid along walls square to it
+        split_point: function(e, x, y) {
+            var g = this.snap_step();
+            var t = M.along(e, x, y);
+            t = e.axis=='d' ? M.round(t, 2) : M.round(Math.round(t/g)*g);
+            if (t<e.lo+0.05 || t>e.hi-0.05) return null;
+            if (e.axis=='h') return [t, e.c];
+            if (e.axis=='v') return [e.c, t];
+            var q = M.line_point(e, t);
+            return [M.round(q[0]), M.round(q[1])];
+        },
+        split_ghost_line: function(g) {
+            var x = this.sx(g.x), y = this.sy(g.y), r = 14;
+            return { x1: x-g.nx*r, y1: y-g.ny*r, x2: x+g.nx*r, y2: y+g.ny*r };
+        },
+        // Add a split point to a wall so each part can be dragged on its own to make a step.
+        // The split is two points in the same place, joined by a zero length wall that
+        // becomes the step, they are tidied away again if the wall is left straight.
+        split_edge: function(room, index, x, y) {
+            var pts = room.points, n = pts.length;
+            var e = M.edges(pts)[index];
+            if (!e || e.len<M.EPS) return;
+            var P = this.split_point(e, x, y);
+            if (!P) return;
+            var edges = {};
+            for (var i in room.edges) {
+                var k = parseInt(i);
+                if (k<index) edges[k] = room.edges[i];
+                else if (k==index) {
+                    // both parts and the step keep the settings of the wall that was split
+                    edges[k] = room.edges[i];
+                    edges[k+1] = M.clone(room.edges[i]);
+                    edges[k+2] = M.clone(room.edges[i]);
+                }
+                else edges[k+2] = room.edges[i];
+            }
+            var np = M.clone(pts);
+            np.splice(index+1, 0, P, M.clone(P));
+            room.points = np;
+            room.edges = edges;
+            this.select({ kind:'wall', room:room.id, edge:index+2, x:P[0]+e.ux*0.01, y:P[1]+e.uy*0.01 });
+            this.commit();
+        },
         set_wall_type: function(w, type) {
             var R = this.room_by_id(w.room);
             if (w.kind=='internal') {
@@ -1237,13 +1482,17 @@ var app = new Vue({
         },
         add_opening_to_wall: function(w, kind) {
             var size = this.last_size[kind];
-            var t = M.round((w.lo+w.hi)/2);
-            var c = w.c + (w.axis=='h' ? w.ny : w.nx)*(w.dist/2);
+            var width = Math.min(size.width, M.round(w.len));
+            // in the middle of the wall, and halfway through it for a wall between rooms
+            var pos = this.point_on_edge(w, (w.lo+w.hi)/2, width);
+            pos.x = M.round(pos.x + w.nx*w.dist/2);
+            pos.y = M.round(pos.y + w.ny*w.dist/2);
             var op = {
                 id: "o"+(this.plan.next_id++), level: w.level, kind: kind,
-                x: w.axis=='h' ? t : M.round(c), y: w.axis=='h' ? M.round(c) : t, axis: w.axis,
-                width: Math.min(size.width, M.round(w.len)), height: size.height, type: null
+                x: pos.x, y: pos.y, axis: pos.axis,
+                width: width, height: size.height, type: null
             };
+            if (pos.dir) op.dir = pos.dir;
             this.plan.openings.push(op);
             this.select({ kind:'opening', id:op.id });
             this.commit();
