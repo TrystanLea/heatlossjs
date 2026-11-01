@@ -14,6 +14,7 @@
   --wall-unheated: #c07a2c;
   --window: #3fa7e0;
   --door: #a8642a;
+  --radiator: #c92a2a;
   --band-external: #a9b2bc;
   --band-boundary: #c4b0d8;
   --band-internal: #cdd3d9;
@@ -202,6 +203,10 @@ kbd {
 .opening-door { stroke: var(--door); }
 .opening.selected { stroke-width: 11; filter: drop-shadow(0 0 2px var(--accent)); }
 .opening-ghost { opacity: 0.5; }
+.radiator { fill: var(--radiator); stroke: #fff; stroke-width: 1; }
+.radiator.selected { stroke: var(--accent); stroke-width: 2.5; }
+.radiator-ghost { opacity: 0.5; pointer-events: none; }
+.fp-place { margin-right: 4px; }
 .vertex-hover { fill: rgba(255,255,255,0.9); stroke: var(--accent); stroke-width: 2.5; pointer-events: none; }
 .split-ghost line { stroke: var(--accent); stroke-width: 2.5; stroke-dasharray: 4 3; }
 .split-ghost circle { fill: #fff; stroke: var(--accent); stroke-width: 2; }

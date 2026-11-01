@@ -1,4 +1,4 @@
-<?php $v = 12; ?>
+<?php $v = 13; ?>
 <!doctype html>
 <html lang="en">
 <head>
@@ -86,6 +86,10 @@
 
           <line v-for="(w,i) in level_walls" :key="'w'+i" :x1="sx(w.x1)" :y1="sy(w.y1)" :x2="sx(w.x2)" :y2="sy(w.y2)"
             :class="['wall', 'wall-'+wall_class(w)]"/>
+
+          <polygon v-for="r in level_radiators" :key="'rad'+r.rad.id" :points="poly(r.rect)"
+            :class="['radiator', {selected: selected_radiator && selected_radiator.rad===r.rad}]"><title>{{ radiator_title(r.room, r.rad, r.index) }}</title></polygon>
+          <polygon v-if="rad_ghost && radiator_rect(rad_ghost.room, rad_ghost.rad)" :points="poly(radiator_rect(rad_ghost.room, rad_ghost.rad))" class="radiator radiator-ghost"/>
 
           <polygon v-if="selected_room && selected_room.level==level.id" :points="poly(selected_room.points)" class="room-selected"/>
           <line v-if="selected_wall" :x1="sx(selected_wall.x1)" :y1="sy(selected_wall.y1)" :x2="sx(selected_wall.x2)" :y2="sy(selected_wall.y2)" class="wall-selected"/>
@@ -276,7 +280,8 @@
 
             <h4>Radiators <button class="fp-link" @click="add_radiator(selected_room)">+ Add</button></h4>
             <div v-for="(rad,i) in selected_room.radiators" :key="'rad'+i" class="fp-rad">
-              <input type="text" v-model="rad.name" @change="commit">
+              <button v-if="!radiator_rect(selected_room, rad)" class="fp-link fp-place" @click="start_place_radiator(selected_room, rad)" title="Not on the plan yet, click then click against a wall to place it">Place</button>
+              <input type="text" v-model="rad.name" @change="on_radiator_name(rad)">
               <div class="fp-unit"><input type="number" step="10" v-model.number="rad.heat50k" @change="commit" v-if="!rad.model || rad.model=='pow'"><span>W@50K</span></div>
               <span class="fp-rad-out">{{ room_calc(selected_room).radiators[i] ? fmt(room_calc(selected_room).radiators[i].heat) : '' }} W</span>
               <button class="fp-x" @click="remove_item(selected_room.radiators,i)" title="Remove">×</button>
@@ -391,6 +396,32 @@
           <p class="fp-muted">Drag a wall to move it. Walls shared with other rooms move together, hold Alt to move just this one.</p>
         </template>
 
+        <!-- Radiator -->
+        <template v-else-if="selected_radiator">
+          <h3>Radiator</h3>
+          <p class="fp-muted">In {{ selected_radiator.room.name }}<template v-if="room_calc(selected_radiator.room) && room_calc(selected_radiator.room).radiators[selected_radiator.index]">
+            · {{ fmt(room_calc(selected_radiator.room).radiators[selected_radiator.index].heat) }} W at {{ plan.heating_MWT }}°C MWT</template></p>
+          <div class="fp-field">
+            <label>Name</label>
+            <input type="text" v-model="selected_radiator.rad.name" @change="on_radiator_name(selected_radiator.rad)">
+          </div>
+          <div class="fp-grid2">
+            <div class="fp-field" v-if="!selected_radiator.rad.model || selected_radiator.rad.model=='pow'">
+              <label>Output at ΔT50</label>
+              <div class="fp-unit"><input type="number" step="10" v-model.number="selected_radiator.rad.heat50k" @change="commit"><span>W</span></div>
+            </div>
+            <div class="fp-field">
+              <label>Length on plan</label>
+              <div class="fp-unit"><input type="number" step="0.1" min="0.2" v-model.number="selected_radiator.rad.length" @change="commit"><span>m</span></div>
+            </div>
+          </div>
+          <div class="fp-buttons">
+            <button @click="unplace_radiator(selected_radiator.rad); sel={kind:'room', id:selected_radiator.room.id}">Take off plan</button>
+            <button class="danger" @click="delete_selection">Delete</button>
+          </div>
+          <p class="fp-muted">Drag to move it along the walls or into another room. Taking it off the plan keeps it in the room's radiator list.</p>
+        </template>
+
         <!-- Window or door -->
         <template v-else-if="selected_opening">
           <h3>{{ selected_opening.kind=='door' ? 'Door' : 'Window' }}</h3>
@@ -429,7 +460,7 @@
           <ol class="fp-help">
             <li><b>Draw rooms</b> with <kbd>R</kbd>: drag out each room. Draw rooms to their inside dimensions. Rooms that touch, or have a gap of up to {{ plan.wall_gap }} m for an internal wall, share a wall automatically. External walls are drawn outwards at the thickness set in Building.</li>
             <li><b>Name it</b>: type the name straight after drawing. Bedrooms get 18°C, living rooms 21°C and bathrooms 22°C automatically.</li>
-            <li><b>Add windows and doors</b> with <kbd>W</kbd> and <kbd>D</kbd>: click on a wall.</li>
+            <li><b>Add windows and doors</b> with <kbd>W</kbd> and <kbd>D</kbd>: click on a wall. Place radiators with <kbd>H</kbd>: click against the inside of a wall.</li>
             <li><b>Add a floor</b> with <b>+ Floor</b>. The floor below shows faintly to trace over. Floors and ceilings between rooms are found from the overlap.</li>
             <li><b>Adjust</b>: drag walls or whole rooms. Drag a corner in any direction to angle the walls, hold <kbd>Shift</kbd> to keep them square. Click a wall to set party walls or its construction, and click a length to type an exact size. To put a step in a wall, cut it with the <b>Split</b> tool (<kbd>S</kbd>) and drag one part.</li>
           </ol>

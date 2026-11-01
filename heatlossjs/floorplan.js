@@ -16,6 +16,7 @@ var ICONS = {
     undo: "M9 14L4 9l5-5 M4 9h11a5 5 0 0 1 0 10h-3",
     redo: "M15 14l5-5-5-5 M20 9H9a5 5 0 0 0 0 10h3",
     split: "M9 6a3 3 0 1 1-6 0a3 3 0 1 1 6 0 M9 18a3 3 0 1 1-6 0a3 3 0 1 1 6 0 M20 4L8.1 15.9 M14.5 14.5L20 20 M8.1 8.1L12 12",
+    radiator: "M3 8h18v9H3z M7 8v9 M11 8v9 M15 8v9 M5 17v2 M19 17v2",
     play: "M7 4.5l12 7.5-12 7.5z",
     pause: "M8 5v14 M16 5v14"
 };
@@ -50,7 +51,14 @@ function normalize_plan(plan) {
         if (!r.ufh) r.ufh = [];
     });
     plan.openings.forEach(function(op) { track(op.id); });
+    plan.rooms.forEach(function(r) { r.radiators.forEach(function(rad) { if (rad.id) track(rad.id); }); });
     if (!(plan.next_id>max_id)) plan.next_id = max_id+1;
+    plan.rooms.forEach(function(r) {
+        r.radiators.forEach(function(rad) {
+            if (!rad.id) rad.id = "q"+(plan.next_id++);
+            if (!(rad.length>0)) rad.length = M.radiator_length(rad.name);
+        });
+    });
     return plan;
 }
 
@@ -97,6 +105,8 @@ var app = new Vue({
         draft: null,
         ghost: null,
         split_ghost: null,
+        rad_ghost: null,
+        place_rad: null,
         guides: [],
         calc: null,
         tab: 'details',
@@ -117,7 +127,8 @@ var app = new Vue({
             { id:'room', label:'Room', key:'R', title:'Drag to draw a room (R)' },
             { id:'window', label:'Window', key:'W', title:'Click on a wall to add a window (W)' },
             { id:'door', label:'Door', key:'D', title:'Click on a wall to add a door (D)' },
-            { id:'split', label:'Split', key:'S', title:'Click on a wall to split it, then drag either part to make a step (S)' }
+            { id:'split', label:'Split', key:'S', title:'Click on a wall to split it, then drag either part to make a step (S)' },
+            { id:'radiator', label:'Radiator', key:'H', title:'Click against the inside of a wall to place a radiator (H)' }
         ]
     },
 
@@ -170,6 +181,25 @@ var app = new Vue({
         level_loose_openings: function() {
             var shaped = this.level_opening_shapes.map(function(o){ return o.op; });
             return this.level_openings.filter(function(op){ return shaped.indexOf(op)==-1; });
+        },
+        // Radiators placed on this floor, drawn against the inside face of their wall
+        level_radiators: function() {
+            var self = this, list = [];
+            this.level_rooms.forEach(function(room) {
+                room.radiators.forEach(function(rad, i) {
+                    var rect = self.radiator_rect(room, rad);
+                    if (rect) list.push({ room: room, rad: rad, index: i, rect: rect });
+                });
+            });
+            return list;
+        },
+        selected_radiator: function() {
+            var s = this.sel;
+            if (!s || s.kind!='radiator') return null;
+            var room = this.room_by_id(s.room);
+            if (!room) return null;
+            var rad = room.radiators.filter(function(q){ return q.id==s.id; })[0];
+            return rad ? { room: room, rad: rad, index: room.radiators.indexOf(rad) } : null;
         },
         selected_room: function() {
             if (!this.sel || this.sel.kind!='room') return null;
@@ -241,12 +271,13 @@ var app = new Vue({
             if (this.space_down) return 'grab';
             if (this.tool=='room') return 'crosshair';
             if (this.tool=='split') return SPLIT_CURSOR;
+            if (this.tool=='radiator') return this.rad_ghost ? 'copy' : 'not-allowed';
             if (this.tool=='window' || this.tool=='door') return this.ghost ? 'copy' : 'not-allowed';
             var h = this.hover;
             if (!h) return 'default';
             if (h.kind=='vertex') return 'move';
             if (h.kind=='edge') return h.axis=='h' ? 'ns-resize' : (h.axis=='v' ? 'ew-resize' : 'move');
-            if (h.kind=='opening') return 'grab';
+            if (h.kind=='opening' || h.kind=='radiator') return 'grab';
             if (h.kind=='room') return 'move';
             return 'default';
         },
@@ -549,6 +580,38 @@ var app = new Vue({
                 return { x1: self.sx(a[0]), y1: self.sy(a[1]), x2: self.sx(b[0]), y2: self.sy(b[1]) };
             });
         },
+        // Radiator outline: on the room side of its wall, a little off the wall
+        radiator_rect: function(room, rad) {
+            var at = M.radiator_edge(room, rad);
+            if (!at) return null;
+            var e = at.edge, h = (rad.length>0 ? rad.length : 1)/2;
+            var gap = 0.04, depth = Math.max(0.1, 5/this.view.scale);
+            return [M.line_point(e, at.t-h, -gap), M.line_point(e, at.t+h, -gap),
+                    M.line_point(e, at.t+h, -gap-depth), M.line_point(e, at.t-h, -gap-depth)];
+        },
+        radiator_title: function(room, rad, i) {
+            var rc = this.room_calc(room);
+            var out = rc && rc.radiators[i] ? " · "+this.fmt(rc.radiators[i].heat)+" W" : "";
+            return rad.name+out;
+        },
+        // Where a radiator of the given length would go: against the nearest wall of the heated room under p
+        radiator_position: function(p, length) {
+            var tol = 20/this.view.scale, best = null;
+            this.level_rooms.forEach(function(room) {
+                if (!room.heated) return;
+                var inside = M.point_in_polygon(p.x, p.y, room.points);
+                M.edges(room.points).forEach(function(e) {
+                    if (e.len<M.EPS) return;
+                    var d = dist_to_segment(p.x, p.y, e.x1, e.y1, e.x2, e.y2);
+                    if (!inside && d>tol) return;
+                    if (!best || d<best.d) best = { d:d, e:e, room:room };
+                });
+            });
+            if (!best) return null;
+            var pos = this.point_on_edge(best.e, M.along(best.e, p.x, p.y), length);
+            pos.room = best.room;
+            return pos;
+        },
         // Lines across the wall at each end of a window or door, its only outline so the
         // cut-out sits flush with the faces of the wall
         opening_jambs: function(op) {
@@ -701,6 +764,10 @@ var app = new Vue({
                 var b = this.opening_rect(ops[i]);
                 if (d<6 || (b && M.point_in_polygon(p.x, p.y, b))) return { kind:'opening', opening:ops[i] };
             }
+            var rads = this.level_radiators;
+            for (var i=rads.length-1; i>=0; i--) {
+                if (M.point_in_polygon(p.x, p.y, rads[i].rect)) return { kind:'radiator', room:rads[i].room, rad:rads[i].rad };
+            }
             var edge_hits = [];
             this.level_rooms.forEach(function(room) {
                 M.edges(room.points).forEach(function(e) {
@@ -819,17 +886,23 @@ var app = new Vue({
             var self = this;
             var d = {
                 type: type, start: p, moved: false,
-                origs: {}, ops: [], op_orig: {},
+                origs: {}, ops: [],
                 cands: this.snap_candidates(rooms.map(function(r){ return r.id; }))
             };
             var seen = {};
+            function orig(op) { return { x: op.x, y: op.y, axis: op.axis, dir: op.dir }; }
             rooms.forEach(function(r) {
                 d.origs[r.id] = M.clone(r.points);
                 M.openings_on_room(self.plan, r).forEach(function(o) {
                     if (seen[o.opening.id]) return;
                     seen[o.opening.id] = true;
-                    d.ops.push({ op: o.opening, room: r, edge: o.edge, dist: o.dist });
-                    d.op_orig[o.opening.id] = { x: o.opening.x, y: o.opening.y, axis: o.opening.axis, dir: o.opening.dir };
+                    d.ops.push({ op: o.opening, room: r, edge: o.edge, dist: o.dist, orig: orig(o.opening) });
+                });
+                r.radiators.forEach(function(rad) {
+                    var at = M.radiator_edge(r, rad);
+                    if (!at) return;
+                    var dist = Math.abs(at.t - M.along(at.edge, at.edge.x1, at.edge.y1));
+                    d.ops.push({ op: rad.place, room: r, edge: at.edge.i, dist: dist, orig: orig(rad.place) });
                 });
             });
             for (var z in extra) d[z] = extra[z];
@@ -861,6 +934,11 @@ var app = new Vue({
                 var sp = this.split_position(p);
                 if (sp) this.split_edge(sp.room, sp.edge, sp.x, sp.y);
                 this.split_ghost = this.split_position(p);
+                return;
+            }
+
+            if (this.tool=='radiator') {
+                this.place_radiator(p);
                 return;
             }
 
@@ -900,6 +978,9 @@ var app = new Vue({
             } else if (h.kind=='opening') {
                 this.select({ kind:'opening', id:h.opening.id });
                 this.drag = { type:'opening', op:h.opening, start:p, moved:false };
+            } else if (h.kind=='radiator') {
+                this.select({ kind:'radiator', room:h.room.id, id:h.rad.id });
+                this.drag = { type:'radiator', room:h.room, rad:h.rad, start:p, moved:false };
             } else if (h.kind=='edge') {
                 var linked = e.altKey ? [{ room:h.room, edge:h.edge, e:M.edges(h.room.points)[h.edge] }] : this.linked_edges(h.room, h.edge);
                 // Grabbing the middle of a wall between rooms moves every room face along it
@@ -929,6 +1010,10 @@ var app = new Vue({
                     this.ghost = pos ? { kind:this.tool, x:pos.x, y:pos.y, axis:pos.axis, dir:pos.dir, width:this.last_size[this.tool].width } : null;
                 } else if (this.tool=='split') {
                     this.split_ghost = this.split_position(p);
+                } else if (this.tool=='radiator') {
+                    var pr = this.pending_radiator(p);
+                    var rp = this.radiator_position(p, pr.length);
+                    this.rad_ghost = rp ? { room: rp.room, rad: { length: pr.length, place: rp } } : null;
                 } else {
                     this.hover = null;
                 }
@@ -987,6 +1072,21 @@ var app = new Vue({
                 });
                 this.update_dragged_openings(d);
             }
+            else if (d.type=='radiator') {
+                // radiators can be dragged along walls and into other rooms
+                var rp = this.radiator_position(p, d.rad.length);
+                if (rp) {
+                    if (rp.room!==d.room) {
+                        d.room.radiators.splice(d.room.radiators.indexOf(d.rad), 1);
+                        rp.room.radiators.push(d.rad);
+                        d.room = rp.room;
+                        this.sel = { kind:'radiator', room:rp.room.id, id:d.rad.id };
+                    }
+                    var place = d.rad.place || {};
+                    this.place_opening(place, rp);
+                    if (!d.rad.place) this.$set(d.rad, 'place', place);
+                }
+            }
             else if (d.type=='opening') {
                 var pos = this.opening_position(p, d.op.width);
                 if (pos) this.place_opening(d.op, pos);
@@ -1019,7 +1119,7 @@ var app = new Vue({
             }
 
             if (d.type=='pan') return;
-            if (d.type=='north' || d.type=='opening') {
+            if (d.type=='north' || d.type=='opening' || d.type=='radiator') {
                 this.commit();
                 return;
             }
@@ -1034,7 +1134,7 @@ var app = new Vue({
             });
             if (!ok) {
                 rooms.forEach(function(r){ r.points = d.origs[r.id]; });
-                d.ops.forEach(function(o){ self.restore_opening(o.op, d.op_orig[o.op.id]); });
+                d.ops.forEach(function(o){ self.restore_opening(o.op, o.orig); });
                 return;
             }
             rooms.forEach(function(r, i){ self.set_room_points(r, cleaned[i]); });
@@ -1191,7 +1291,7 @@ var app = new Vue({
             });
             if (!ok) {
                 rooms.forEach(function(r){ r.points = d.origs[r.id]; });
-                d.ops.forEach(function(o){ self.restore_opening(o.op, d.op_orig[o.op.id]); });
+                d.ops.forEach(function(o){ self.restore_opening(o.op, o.orig); });
                 return;
             }
             rooms.forEach(function(r, i){ self.set_room_points(r, cleaned[i]); });
@@ -1219,6 +1319,7 @@ var app = new Vue({
             else if (k=='w') this.set_tool('window');
             else if (k=='d') this.set_tool('door');
             else if (k=='s') this.set_tool('split');
+            else if (k=='h') this.set_tool('radiator');
             else if (k=='f') this.fit();
             else if (k=='+' || k=='=') this.zoom(1.25);
             else if (k=='-') this.zoom(0.8);
@@ -1244,6 +1345,8 @@ var app = new Vue({
             this.tool = t;
             this.ghost = null;
             this.split_ghost = null;
+            this.rad_ghost = null;
+            if (t!='radiator') this.place_rad = null;
             this.hover = null;
             this.draft = null;
         },
@@ -1314,6 +1417,11 @@ var app = new Vue({
                 this.commit();
             } else if (this.selected_opening) {
                 this.plan.openings.splice(this.plan.openings.indexOf(this.selected_opening), 1);
+                this.sel = null;
+                this.commit();
+            } else if (this.selected_radiator) {
+                var sr = this.selected_radiator;
+                sr.room.radiators.splice(sr.index, 1);
                 this.sel = null;
                 this.commit();
             }
@@ -1514,9 +1622,63 @@ var app = new Vue({
             r[which] = Object.keys(s).length ? s : null;
             this.commit();
         },
-        add_radiator: function(r) {
+        new_radiator: function(r) {
             var last = r.radiators[r.radiators.length-1];
-            r.radiators.push(last ? M.clone(last) : { name: "Double panel 1000x600", heat50k: 1790 });
+            var rad = last ? M.clone(last) : { name: "Double panel 1000x600", heat50k: 1790 };
+            delete rad.place;
+            rad.id = "q"+(this.plan.next_id++);
+            if (!(rad.length>0)) rad.length = M.radiator_length(rad.name);
+            return rad;
+        },
+        add_radiator: function(r) {
+            r.radiators.push(this.new_radiator(r));
+            this.commit();
+        },
+        // The radiator the tool will place next: one picked from a room's list, or the
+        // first one not yet on the plan in the room under the pointer, or a new one
+        pending_radiator: function(p) {
+            var pr = this.place_rad && this.room_by_id(this.place_rad.room);
+            if (pr) {
+                var want = this.place_rad.id;
+                var picked = pr.radiators.filter(function(q){ return q.id==want; })[0];
+                if (picked) return picked;
+            }
+            var room = this.level_rooms.filter(function(r){ return r.heated && M.point_in_polygon(p.x, p.y, r.points); })[0];
+            var unplaced = room ? room.radiators.filter(function(q){ return !M.radiator_edge(room, q); })[0] : null;
+            return unplaced || { length: (this.last_rad_length || 1.0) };
+        },
+        place_radiator: function(p) {
+            var pending = this.pending_radiator(p);
+            var pos = this.radiator_position(p, pending.length || 1.0);
+            if (!pos) return;
+            var room = pos.room, rad = pending.id ? pending : this.new_radiator(room);
+            // a radiator picked from another room's list moves to the room it is placed in
+            this.plan.rooms.forEach(function(r) {
+                var i = r.radiators.indexOf(rad);
+                if (i!=-1 && r!==room) r.radiators.splice(i, 1);
+            });
+            if (room.radiators.indexOf(rad)==-1) room.radiators.push(rad);
+            var place = {};
+            this.place_opening(place, pos);
+            this.$set(rad, 'place', place);
+            this.last_rad_length = rad.length;
+            this.place_rad = null;
+            this.select({ kind:'radiator', room:room.id, id:rad.id });
+            this.commit();
+            this.rad_ghost = null;
+        },
+        start_place_radiator: function(room, rad) {
+            this.set_tool('radiator');
+            this.place_rad = { room: room.id, id: rad.id };
+            if (room.level!=this.level.id) this.set_level(this.plan.levels.filter(function(l){ return l.id==room.level; })[0]);
+        },
+        unplace_radiator: function(rad) {
+            this.$delete(rad, 'place');
+            this.commit();
+        },
+        on_radiator_name: function(rad) {
+            // pick up the length from a name like 1200x600 if it has one
+            if (/\d{3,4}\s*[x\u00d7]\s*\d{3,4}/i.test(rad.name)) rad.length = M.radiator_length(rad.name);
             this.commit();
         },
         add_ufh: function(r) {
@@ -1723,7 +1885,12 @@ var app = new Vue({
                         if (!r.heated || !cr) return;
                         r.temperature = cr.temperature;
                         r.ach = cr.air_change_an_hour;
-                        r.radiators = (cr.radiators||[]).map(function(rad){ return { name: rad.name, heat50k: rad.heat50k, model: rad.model, m: rad.m, c: rad.c }; });
+                        var old = r.radiators;
+                        r.radiators = (cr.radiators||[]).map(function(rad, i) {
+                            var q = { name: rad.name, heat50k: rad.heat50k, model: rad.model, m: rad.m, c: rad.c };
+                            if (old[i]) { q.id = old[i].id; q.length = old[i].length; if (old[i].place) q.place = old[i].place; }
+                            return q;
+                        });
                         r.ufh = (cr.ufh||[]).map(function(u){ return { name: u.name, area: u.area, flooring: u.flooring }; });
                     });
                 }

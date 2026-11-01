@@ -389,6 +389,33 @@ var floorplan_model = (function () {
         return list;
     }
 
+    // Radiators keep their place on the plan (place, length, id) alongside the
+    // settings the calculation uses, only the settings go into the config
+    function radiator_config(rad) {
+        var c = clone(rad);
+        delete c.place; delete c.length; delete c.id;
+        return c;
+    }
+
+    // Length of a radiator from a name like "Double panel 1200x600", or 1m
+    function radiator_length(name) {
+        var m = /(\d{3,4})\s*[x\u00d7]\s*\d{3,4}/i.exec(name||"");
+        return m ? 1*m[1]/1000 : 1.0;
+    }
+
+    // The edge of a room a placed radiator sits against, and where along it
+    function radiator_edge(room, rad) {
+        if (!rad.place) return null;
+        var list = edges(room.points);
+        for (var i=0; i<list.length; i++) {
+            var e = list[i];
+            if (e.len<EPS) continue;
+            var t = opening_along(rad.place, e, 0);
+            if (t!==null && t>=e.lo-EPS && t<=e.hi+EPS) return { edge: e, t: t };
+        }
+        return null;
+    }
+
     // Thickness of the parts of a wall that are not shared with another room,
     // shared walls take their thickness from the gap between the two rooms
     function edge_thickness(plan, p) {
@@ -479,7 +506,7 @@ var floorplan_model = (function () {
                 height: room_height(r),
                 air_change_an_hour: 1*r.ach,
                 elements: [],
-                radiators: clone(r.radiators||[]),
+                radiators: (r.radiators||[]).map(radiator_config),
                 ufh: clone(r.ufh||[])
             };
         });
@@ -953,22 +980,31 @@ var floorplan_model = (function () {
                 if (e.axis==axis && Math.abs(e.c-c)<EPS) r.edges[e.i] = clone(props);
             });
         }
-        function rad(name, heat50k) { return { name: name, heat50k: heat50k }; }
+        // radiator against a wall, x,y on the inside face of the wall at its middle
+        function rad(name, heat50k, x, y, axis) {
+            var r = { id: "q"+(plan.next_id++), name: name, heat50k: heat50k, length: radiator_length(name) };
+            if (axis) r.place = { x: x, y: y, axis: axis };
+            return r;
+        }
 
         var party = { boundary: "neighbour", ext_type: "Wall:Party" };
 
         var living = room("L1", "Living room", [[0.33,4.37],[3.69,4.37],[3.69,12.03],[1.16,12.03],[1.16,11.18],[0.33,11.18]], {
             temperature: 20, floor: { type: "Floor:InsulatedGround" },
-            radiators: [rad("Double Panel Convector 1200x600",2146), rad("Double Panel Convector 1200x600",2146), rad("Double Panel Convector 1200x600",2146)]
+            radiators: [
+                rad("Double Panel Convector 1200x600",2146, 2.04,12.03,'h'),
+                rad("Double Panel Convector 1200x600",2146, 1.41,4.37,'h'),
+                rad("Double Panel Convector 1200x600",2146, 0.33,8.4,'v')
+            ]
         });
-        var hall = room("L1", "Hall", rect(3.80,4.37,4.80,12.03), { height: 2.45, radiators: [rad("Double Panel Convector 1200x600",2146)] });
+        var hall = room("L1", "Hall", rect(3.80,4.37,4.80,12.03), { height: 2.45, radiators: [rad("Double Panel Convector 1200x600",2146, 4.80,10.6,'v')] });
         var kitchen = room("L1", "Kitchen", rect(2.40,0.80,4.80,3.82), { height: 2.45 });
 
-        var bed1 = room("L2", "Bed 1", rect(0.33,4.37,3.27,7.87), { radiators: [rad("Double Panel Convector 1200x500",1834)] });
-        var bed2 = room("L2", "Bed 2", rect(0.33,7.99,2.93,11.16), { radiators: [rad("Double Panel Convector 1200x500",1834)] });
+        var bed1 = room("L2", "Bed 1", rect(0.33,4.37,3.27,7.87), { radiators: [rad("Double Panel Convector 1200x500",1834, 1.38,4.37,'h')] });
+        var bed2 = room("L2", "Bed 2", rect(0.33,7.99,2.93,11.16), { radiators: [rad("Double Panel Convector 1200x500",1834, 2.01,11.16,'h')] });
         var landing = room("L2", "Landing", [[3.37,4.37],[4.80,4.37],[4.80,8.79],[3.01,8.79],[3.01,7.99],[3.37,7.99]]);
-        var study = room("L2", "Study", rect(3.01,8.92,4.80,11.16), { radiators: [rad("Double Panel Convector 1000x400",1273)] });
-        var bathroom = room("L2", "Bathroom", rect(2.40,0.53,4.80,3.82), { radiators: [rad("Double Panel Convector 800x600",1430)] });
+        var study = room("L2", "Study", rect(3.01,8.92,4.80,11.16), { radiators: [rad("Double Panel Convector 1000x400",1273, 4.25,11.16,'h')] });
+        var bathroom = room("L2", "Bathroom", rect(2.40,0.53,4.80,3.82), { radiators: [rad("Double Panel Convector 800x600",1430, 2.40,2.6,'v')] });
 
         // Party walls with the houses either side
         [living, bed1, bed2].forEach(function(r){ walls_on(r, 'v', 0.33, party); });
@@ -1035,6 +1071,9 @@ var floorplan_model = (function () {
         union: union,
         orientation_name: orientation_name,
         edge_thickness: edge_thickness,
+        radiator_config: radiator_config,
+        radiator_length: radiator_length,
+        radiator_edge: radiator_edge,
         remap_edge_props: remap_edge_props,
         openings_on_room: openings_on_room,
         guess_temperature: guess_temperature,
