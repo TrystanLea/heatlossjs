@@ -13,9 +13,23 @@ Create html page, load heatloss.js tool with the following:
     <script type="text/javascript" src="files/bothylab_data.js"></script>
     <link rel="stylesheet" type="text/css" href="heatlossjs/style.css" />
     <div id="heatloss"></div>
+    <script type="text/javascript" src="heatlossjs/ecodan.js"></script>
+    <script type="text/javascript" src="heatlossjs/calc.js"></script>
     <script type="text/javascript" src="heatlossjs/model.js"></script>
     
 Define your building in json object input definition (loaded in the first line above).
+
+### Floor plan builder
+
+Open [floorplan.php](floorplan.php) to draw the building instead of typing in each element:
+
+- Drag to draw rooms on a grid, rooms that touch (or are within the wall gap) share a wall automatically.
+- Click on walls to add windows and doors, click a wall to mark it as a party wall or change its construction.
+- Add floors, the floor below is shown faintly to trace over. Floors and ceilings between rooms are worked out from the overlap, with ground below the bottom floor and roof above any area not covered.
+- Wall orientations come from the north arrow.
+- Heat loss is calculated as you go using the same calculation (heatlossjs/calc.js), and shown as a heat map on the plan.
+
+Saved files are standard heatlossjs json with the plan stored under a `floorplan` key, so they open in both tools. *Table view* opens the generated calculation in the original table interface.
 
 Examples: 
 

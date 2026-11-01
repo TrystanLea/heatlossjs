@@ -16,7 +16,8 @@
   <div class="page">
   
     <h2>heatloss.js example</h2>
-    <i>See linked resources at the bottom for more information on how to use this tool</i>
+    <i>See linked resources at the bottom for more information on how to use this tool</i><br>
+    <a href="floorplan.php">Try the new floor plan builder</a>
     <br><br>
     <script type="text/javascript" src="files/config_new.js?v=<?php echo $v; ?>"></script>
     <link rel="stylesheet" type="text/css" href="heatlossjs/style.css?v=<?php echo $v; ?>" />
@@ -40,8 +41,17 @@
 <script> 
 var cachev = <?php echo $v; ?>; 
 var config = <?php echo $example; ?>;
+
+// Opened from the floor plan builder
+if (window.location.search.indexOf("load=floorplan")!=-1) {
+    try {
+        var floorplan_config = localStorage.getItem("heatlossjs_floorplan_config");
+        if (floorplan_config) config = JSON.parse(floorplan_config);
+    } catch (e) {}
+}
 </script>
 
 <script type="text/javascript" src="heatlossjs/ecodan.js?v=<?php echo $v; ?>"></script>
+<script type="text/javascript" src="heatlossjs/calc.js?v=<?php echo $v; ?>"></script>
 <script type="text/javascript" src="heatlossjs/model.js?v=<?php echo $v; ?>"></script>
 
