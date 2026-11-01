@@ -14,6 +14,10 @@
   --wall-unheated: #c07a2c;
   --window: #3fa7e0;
   --door: #a8642a;
+  --band-external: #a9b2bc;
+  --band-boundary: #c4b0d8;
+  --band-internal: #cdd3d9;
+  --band-unheated: #e2c8a6;
   --ok: #2f9e44;
   --ok-soft: #e3f6e7;
   --short: #d6402f;
@@ -158,14 +162,27 @@ kbd {
 .room-selected { fill: rgba(26,143,201,0.08); stroke: var(--accent); stroke-width: 2; }
 
 .wall { stroke-linecap: square; }
-.wall-external { stroke: var(--wall); stroke-width: 5; }
-.wall-boundary { stroke: var(--wall-boundary); stroke-width: 5; }
-.wall-unheated { stroke: var(--wall-unheated); stroke-width: 4; }
-.wall-internal { stroke: var(--wall-internal); stroke-width: 2; }
+.wall-external { stroke: var(--wall); stroke-width: 2.5; }
+.wall-boundary { stroke: var(--wall-boundary); stroke-width: 2.5; }
+.wall-unheated { stroke: var(--wall-unheated); stroke-width: 2.5; }
+.wall-internal { stroke: var(--wall-internal); stroke-width: 1.5; }
+.wall-junction { display: none; }
+
+.band { stroke: none; }
+.band-external { fill: var(--band-external); }
+.band-boundary { fill: var(--band-boundary); }
+.band-internal, .band-junction { fill: var(--band-internal); }
+.band-unheated { fill: var(--band-unheated); }
+.band-unheated_external, .band-unheated_internal, .band-unheated_side { fill: #e4e7ea; }
+.ghost-band { fill: #9aa5b1; opacity: 0.16; }
 .wall-unheated_external, .wall-unheated_internal, .wall-unheated_side { stroke: #aab3bc; stroke-width: 2; stroke-dasharray: 6 3; }
 .wall-selected { stroke: var(--accent); stroke-width: 8; stroke-opacity: 0.55; stroke-linecap: round; }
 
-.opening { stroke-width: 7; stroke-linecap: butt; }
+.opening { stroke-width: 4; stroke-linecap: butt; }
+.opening-band { stroke-width: 1.5; }
+.opening-band-window { fill: #d6eefa; stroke: var(--window); }
+.opening-band-door { fill: #f1dfcc; stroke: var(--door); }
+.opening-band.selected { stroke: var(--accent); stroke-width: 2.5; }
 .opening-window { stroke: var(--window); }
 .opening-door { stroke: var(--door); }
 .opening.selected { stroke-width: 11; filter: drop-shadow(0 0 2px var(--accent)); }

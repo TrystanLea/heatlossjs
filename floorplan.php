@@ -1,4 +1,4 @@
-<?php $v = 1; ?>
+<?php $v = 2; ?>
 <!doctype html>
 <html lang="en">
 <head>
@@ -68,7 +68,10 @@
           <path :d="grid.minor" class="grid-minor"/>
           <path :d="grid.major" class="grid-major"/>
 
+          <polygon v-for="(w,i) in ghost_bands" :key="'gb'+i" :points="rect_points(w.band)" class="ghost-band"/>
           <polygon v-for="r in ghost_rooms" :key="'g'+r.id" :points="poly(r.points)" class="ghost"/>
+
+          <polygon v-for="(w,i) in level_bands" :key="'b'+i" :points="rect_points(w.band)" :class="['band', 'band-'+wall_class(w)]"/>
 
           <polygon v-for="r in level_rooms" :key="r.id" :points="poly(r.points)" :fill="room_fill(r)"
             :class="['room', {hover: hover_room==r.id && !drag, multi: multi.indexOf(r.id)!=-1}]"/>
@@ -79,6 +82,8 @@
           <polygon v-if="selected_room && selected_room.level==level.id" :points="poly(selected_room.points)" class="room-selected"/>
           <line v-if="selected_wall" :x1="sx(selected_wall.x1)" :y1="sy(selected_wall.y1)" :x2="sx(selected_wall.x2)" :y2="sy(selected_wall.y2)" class="wall-selected"/>
 
+          <polygon v-for="o in level_opening_shapes" :key="'ob'+o.op.id" :points="rect_points(o.rect)"
+            :class="['opening-band', 'opening-band-'+o.op.kind, {selected: selected_opening===o.op}]"/>
           <line v-for="op in level_openings" :key="op.id" v-bind="opening_line(op)"
             :class="['opening', 'opening-'+op.kind, {selected: selected_opening===op}]"/>
           <line v-if="ghost" v-bind="opening_line(ghost)" :class="['opening', 'opening-'+ghost.kind, 'opening-ghost']"/>
@@ -134,7 +139,7 @@
       </div>
 
       <div class="fp-intro" v-if="show_intro">
-        <b>Welcome!</b> This is an example house to show how it works. Draw rooms, add windows and doors, and the
+        <b>Welcome!</b> This is the stone mid terrace from the main heatlossjs example, with its 550mm walls, to show how it works. Draw rooms, add windows and doors, and the
         heat loss is calculated as you go.
         <div class="fp-intro-buttons">
           <button class="primary" @click="file_new">Start my own plan</button>
@@ -310,6 +315,12 @@
             {{ room_name(selected_wall.room) }}<template v-if="selected_wall.other"> ↔ {{ room_name(selected_wall.other) }}</template>
             <template v-if="selected_wall.orientation"> · faces {{ selected_wall.orientation }}</template>
           </p>
+          <div class="fp-field" v-if="selected_wall.axis!='d' && !selected_wall.other && selected_wall.kind!='junction'">
+            <label>Wall thickness</label>
+            <div class="fp-unit"><input type="number" step="0.01" min="0" :value="wall_thickness_override(selected_wall)" :placeholder="wall_default_thickness(selected_wall)"
+              @change="set_wall_thickness(selected_wall, $event.target.value)"><span>m</span></div>
+            <small class="fp-muted">Drawn outwards from the room. Leave blank for the default set in Building.</small>
+          </div>
           <template v-if="selected_wall.item!==null">
             <div class="fp-field">
               <label>Construction</label>
@@ -327,6 +338,7 @@
             <div class="fp-stats">
               <div><span>Length</span><b>{{ fmt(selected_wall.len,2) }} m</b></div>
               <div><span>Height</span><b>{{ fmt(room_height(room_by_id(selected_wall.room)),2) }} m</b></div>
+              <div v-if="selected_wall.other"><span>Thickness</span><b>{{ fmt(selected_wall.dist,2) }} m</b></div>
               <template v-if="element_heat(selected_wall.room, selected_wall.item)">
                 <div><span>Net area</span><b>{{ fmt(element_heat(selected_wall.room, selected_wall.item).A,1) }} m²</b></div>
                 <div><span>Heat loss</span><b>{{ fmt(element_heat(selected_wall.room, selected_wall.item).heat) }} W</b></div>
@@ -337,7 +349,9 @@
               <button @click="add_opening_to_wall(selected_wall,'door')">+ Door here</button>
             </div>
           </template>
+          <p v-else-if="selected_wall.kind=='junction'" class="fp-muted">This short stretch is where other walls meet this one, so it is not counted as an outside wall.</p>
           <p v-else class="fp-muted">This wall belongs to an unheated space and is not part of the calculation.</p>
+          <p class="fp-muted" v-if="selected_wall.other">The thickness of a wall between rooms is the gap between them. Drag one face to change it, or the middle of the wall to move it.</p>
           <p class="fp-muted">Drag a wall to move it. Walls shared with other rooms move together, hold Alt to move just this one.</p>
         </template>
 
@@ -377,7 +391,7 @@
         <template v-else>
           <h3>How to use</h3>
           <ol class="fp-help">
-            <li><b>Draw rooms</b> with <kbd>R</kbd>: drag out each room. Rooms that touch share a wall automatically. Leave a gap of up to {{ plan.wall_gap }} m for wall thickness if you like.</li>
+            <li><b>Draw rooms</b> with <kbd>R</kbd>: drag out each room. Draw rooms to their inside dimensions. Rooms that touch, or have a gap of up to {{ plan.wall_gap }} m for an internal wall, share a wall automatically. External walls are drawn outwards at the thickness set in Building.</li>
             <li><b>Name it</b>: type the name straight after drawing. Bedrooms get 18°C, living rooms 21°C and bathrooms 22°C automatically.</li>
             <li><b>Add windows and doors</b> with <kbd>W</kbd> and <kbd>D</kbd>: click on a wall.</li>
             <li><b>Add a floor</b> with <b>+ Floor</b>. The floor below shows faintly to trace over. Floors and ceilings between rooms are found from the overlap.</li>
@@ -481,7 +495,17 @@
             <div class="fp-unit"><input type="number" step="0.05" min="0" v-model.number="plan.wall_gap" @change="commit"><span>m</span></div>
           </div>
         </div>
-        <p class="fp-muted">Rooms closer than the max wall gap share a wall. North can also be set by dragging the compass.</p>
+        <div class="fp-grid3">
+          <div class="fp-field">
+            <label>External walls</label>
+            <div class="fp-unit"><input type="number" step="0.01" min="0" v-model.number="plan.wall_thickness.external" @change="commit"><span>m</span></div>
+          </div>
+          <div class="fp-field">
+            <label>Party walls</label>
+            <div class="fp-unit"><input type="number" step="0.01" min="0" v-model.number="plan.wall_thickness.party" @change="commit"><span>m</span></div>
+          </div>
+        </div>
+        <p class="fp-muted">Rooms closer than the max wall gap share a wall, and the gap is that wall's thickness. External and party walls are drawn outwards at these thicknesses unless set on the wall. Floor and ceiling over a wall on the floor above or below is not counted as exposed. North can also be set by dragging the compass.</p>
       </div>
 
       <!-- ============================== Results ============================== -->

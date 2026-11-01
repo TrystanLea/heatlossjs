@@ -102,6 +102,39 @@ var floorplan_model = (function () {
         return total;
     }
 
+    function in_rect(x, y, r) {
+        return x>r.x1 && x<r.x2 && y>r.y1 && y<r.y2;
+    }
+
+    function rects_overlap(a, b) {
+        return a.x1<b.x2-EPS && b.x1<a.x2-EPS && a.y1<b.y2-EPS && b.y1<a.y2-EPS;
+    }
+
+    // Area of a polygon that lies over wall rectangles of another floor without
+    // also being over one of that floor's rooms
+    function area_over_walls(pts, rooms, bands) {
+        var b = bbox(pts);
+        bands = bands.filter(function(r){ return rects_overlap(b, r); });
+        if (!bands.length) return 0;
+        rooms = rooms.filter(function(p){ return rects_overlap(b, bbox(p)); });
+        var xs = pts.map(function(p){return p[0]}), ys = pts.map(function(p){return p[1]});
+        bands.forEach(function(r){ xs.push(r.x1,r.x2); ys.push(r.y1,r.y2); });
+        rooms.forEach(function(p){ p.forEach(function(q){ xs.push(q[0]); ys.push(q[1]); }); });
+        xs = unique_sorted(xs.filter(function(x){ return x>=b.x1-EPS && x<=b.x2+EPS; }));
+        ys = unique_sorted(ys.filter(function(y){ return y>=b.y1-EPS && y<=b.y2+EPS; }));
+        var total = 0;
+        for (var i=0; i<xs.length-1; i++) {
+            for (var j=0; j<ys.length-1; j++) {
+                var cx = (xs[i]+xs[i+1])/2, cy = (ys[j]+ys[j+1])/2;
+                if (!point_in_polygon(cx,cy,pts)) continue;
+                if (!bands.some(function(r){ return in_rect(cx,cy,r); })) continue;
+                if (rooms.some(function(p){ return point_in_polygon(cx,cy,p); })) continue;
+                total += (xs[i+1]-xs[i])*(ys[j+1]-ys[j]);
+            }
+        }
+        return total;
+    }
+
     // Edge list with axis, line coordinate, extent along the line and outward normal
     function edges(pts) {
         var list = [];
@@ -248,6 +281,16 @@ var floorplan_model = (function () {
         return list;
     }
 
+    // Thickness of the parts of a wall that are not shared with another room,
+    // shared walls take their thickness from the gap between the two rooms
+    function edge_thickness(plan, p) {
+        p = p || {};
+        if (typeof p.thickness=='number' && p.thickness>=0) return p.thickness;
+        var t = plan.wall_thickness || {};
+        if (p.boundary && p.boundary!='external') return t.party>=0 ? 1*t.party : 0.2;
+        return t.external>=0 ? 1*t.external : 0.3;
+    }
+
     function guess_temperature(name) {
         var n = (name||"").toLowerCase();
         if (/bath|shower|en.?suite/.test(n)) return 22;
@@ -348,12 +391,15 @@ var floorplan_model = (function () {
         // ------------------------------------------------------------------
         // Walls
         // ------------------------------------------------------------------
+        // Split each edge into stretches shared with a neighbouring room and stretches that are not
+        var segs = [], seg_by = {};
         plan.rooms.forEach(function(R) {
             if (!by_level[R.level]) return;
             var others = by_level[R.level].filter(function(S){ return S!==R; });
             var props = R.edges || {};
+            var room_edges = edges(R.points);
 
-            edges(R.points).forEach(function(e) {
+            room_edges.forEach(function(e) {
                 var p = props[e.i] || {};
                 var pieces = [{lo:e.lo, hi:e.hi, other:null}];
 
@@ -383,88 +429,165 @@ var floorplan_model = (function () {
                     });
                 }
 
-                pieces.forEach(function(pc) {
-                    var S = pc.other;
-                    var wall = {
-                        level: R.level, room: R.id, edge: e.i, axis: e.axis, c: e.c,
-                        lo: pc.lo, hi: pc.hi, len: pc.hi-pc.lo, nx: e.nx, ny: e.ny,
-                        other: S ? S.id : null, other_edge: S ? pc.edge : null, dist: S ? pc.dist : 0,
-                        boundary: null, type: null, orientation: "", item: null, openings: []
-                    };
-                    if (e.axis=='d') {
-                        wall.x1 = e.x1; wall.y1 = e.y1; wall.x2 = e.x2; wall.y2 = e.y2;
-                    } else if (e.axis=='h') {
-                        wall.x1 = pc.lo; wall.x2 = pc.hi; wall.y1 = wall.y2 = e.c;
-                    } else {
-                        wall.y1 = pc.lo; wall.y2 = pc.hi; wall.x1 = wall.x2 = e.c;
-                    }
-                    walls.push(wall);
+                var t = e.axis=='d' ? 0 : edge_thickness(plan, p);
+                pieces.forEach(function(pc){ pc.thick = pc.other ? pc.dist : t; });
+                var seg = {R:R, e:e, p:p, pieces:pieces, n:room_edges.length};
+                segs.push(seg);
+                seg_by[R.id+":"+e.i] = seg;
+            });
+        });
 
-                    var h = room_height(R);
+        // Footprint of each stretch of wall, extended round outside corners so walls join up
+        function thick_at(seg, x, y) {
+            var t = seg.e.axis=='h' ? x : y;
+            for (var k=0; k<seg.pieces.length; k++) {
+                var pc = seg.pieces[k];
+                if (Math.abs(pc.lo-t)<EPS || Math.abs(pc.hi-t)<EPS) return pc.thick;
+            }
+            return 0;
+        }
+        function convex(a, b) {
+            return (a.x2-a.x1)*(b.y2-b.y1) - (a.y2-a.y1)*(b.x2-b.x1) > EPS;
+        }
+        segs.forEach(function(s) {
+            var e = s.e;
+            s.prev = seg_by[s.R.id+":"+((e.i+s.n-1)%s.n)];
+            s.next = seg_by[s.R.id+":"+((e.i+1)%s.n)];
+            s.convex_start = convex(s.prev.e, e);
+            s.convex_end = convex(e, s.next.e);
+            var forward = (e.axis=='h' ? e.x2-e.x1 : e.y2-e.y1) > 0;
+            s.convex_lo = forward ? s.convex_start : s.convex_end;
+            s.convex_hi = forward ? s.convex_end : s.convex_start;
+        });
 
-                    if (!R.heated) {
-                        wall.kind = S ? (S.heated ? 'unheated_side' : 'unheated_internal') : 'unheated_external';
-                        return;
-                    }
+        // A short stretch next to a shared wall, that ends at another shared wall or at an
+        // inside corner, is where internal walls meet this one. It is part of the wall
+        // junction rather than an outside wall.
+        segs.forEach(function(s) {
+            var pieces = s.pieces;
+            if (s.e.axis=='d') return;
+            pieces.forEach(function(pc, k) {
+                if (pc.other || pc.hi-pc.lo>gap+EPS) return;
+                var before = k>0 ? pieces[k-1] : null, after = k<pieces.length-1 ? pieces[k+1] : null;
+                if (!(before && before.other) && !(after && after.other)) return;
+                if (before ? !before.other : s.convex_lo) return;
+                if (after ? !after.other : s.convex_hi) return;
+                pc.junction = true;
+                pc.thick = Math.max(before && before.other ? before.dist : 0, after && after.other ? after.dist : 0);
+            });
+        });
 
-                    var refs;
-                    if (S && S.heated) {
-                        wall.kind = 'internal';
-                        wall.boundary = names[S.id];
-                        var other_props = (S.edges||{})[pc.edge] || {};
-                        wall.type = type_or_default(p.int_type || other_props.int_type, d.wall_internal);
-                        if (room_index[R.id] > room_index[S.id]) {
-                            // Element already created from the other side
-                            for (var z=0; z<shared.length; z++) {
-                                var s = shared[z];
-                                if (s.a==S.id && s.b==R.id && s.axis==e.axis && s.lo<pc.hi-EPS && s.hi>pc.lo+EPS) {
-                                    wall.item = s.item;
-                                    wall.openings = s.wall.openings;
-                                    break;
-                                }
+        segs.forEach(function(s) {
+            var e = s.e;
+            if (e.axis=='d') return;
+            var ext_start = s.convex_start ? thick_at(s.prev, e.x1, e.y1) : 0;
+            var ext_end = s.convex_end ? thick_at(s.next, e.x2, e.y2) : 0;
+            var start = e.axis=='h' ? e.x1 : e.y1, end = e.axis=='h' ? e.x2 : e.y2;
+            var ext_lo = start<end ? ext_start : ext_end, ext_hi = start<end ? ext_end : ext_start;
+            var n = e.axis=='h' ? e.ny : e.nx;
+            s.pieces.forEach(function(pc) {
+                if (pc.thick<EPS) return;
+                var lo = pc.lo - (Math.abs(pc.lo-e.lo)<EPS ? ext_lo : 0);
+                var hi = pc.hi + (Math.abs(pc.hi-e.hi)<EPS ? ext_hi : 0);
+                var a = Math.min(e.c, e.c+n*pc.thick), b = Math.max(e.c, e.c+n*pc.thick);
+                pc.band = e.axis=='h' ? {x1:lo, y1:a, x2:hi, y2:b} : {x1:a, y1:lo, x2:b, y2:hi};
+            });
+        });
+
+        segs.forEach(function(s) {
+            var R = s.R, e = s.e, p = s.p;
+            s.pieces.forEach(function(pc) {
+                var S = pc.other;
+                var wall = {
+                    level: R.level, room: R.id, edge: e.i, axis: e.axis, c: e.c,
+                    lo: pc.lo, hi: pc.hi, len: pc.hi-pc.lo, nx: e.nx, ny: e.ny,
+                    other: S ? S.id : null, other_edge: S ? pc.edge : null, dist: S ? pc.dist : 0,
+                    thick: pc.thick, band: pc.band || null,
+                    boundary: null, type: null, orientation: "", item: null, openings: []
+                };
+                if (e.axis=='d') {
+                    wall.x1 = e.x1; wall.y1 = e.y1; wall.x2 = e.x2; wall.y2 = e.y2;
+                } else if (e.axis=='h') {
+                    wall.x1 = pc.lo; wall.x2 = pc.hi; wall.y1 = wall.y2 = e.c;
+                } else {
+                    wall.y1 = pc.lo; wall.y2 = pc.hi; wall.x1 = wall.x2 = e.c;
+                }
+                walls.push(wall);
+
+                var h = room_height(R);
+
+                if (pc.junction) {
+                    wall.kind = R.heated ? 'junction' : 'unheated_internal';
+                    return;
+                }
+
+                if (!R.heated) {
+                    wall.kind = S ? (S.heated ? 'unheated_side' : 'unheated_internal') : 'unheated_external';
+                    return;
+                }
+
+                var refs;
+                if (S && S.heated) {
+                    wall.kind = 'internal';
+                    wall.boundary = names[S.id];
+                    var other_props = (S.edges||{})[pc.edge] || {};
+                    wall.type = type_or_default(p.int_type || other_props.int_type, d.wall_internal);
+                    if (room_index[R.id] > room_index[S.id]) {
+                        // Element already created from the other side
+                        for (var z=0; z<shared.length; z++) {
+                            var s = shared[z];
+                            if (s.a==S.id && s.b==R.id && s.axis==e.axis && s.lo<pc.hi-EPS && s.hi>pc.lo+EPS) {
+                                wall.item = s.item;
+                                wall.openings = s.wall.openings;
+                                break;
                             }
-                            if (wall.item!==null) return;
                         }
-                        refs = [{room:R.id, boundary:names[S.id]}, {room:S.id, boundary:names[R.id]}];
-                        wall.item = add_item({type: wall.type, orientation: "", width: round(wall.len), height: Math.min(h,room_height(S))}, refs);
-                        shared.push({a:R.id, b:S.id, axis:e.axis, lo:pc.lo, hi:pc.hi, item:wall.item, wall:wall});
-                    } else {
-                        if (S) {
-                            wall.kind = 'unheated';
-                            wall.boundary = 'unheated';
-                        } else {
-                            wall.kind = 'external';
-                            wall.boundary = boundary_or(p.boundary, 'external');
-                        }
-                        wall.type = type_or_default(p.ext_type, d.wall_external);
-                        wall.orientation = orientation_name(e.nx, e.ny, plan.north);
-                        refs = [{room:R.id, boundary:wall.boundary}];
-                        wall.item = add_item({type: wall.type, orientation: wall.orientation, width: round(wall.len), height: h}, refs);
+                        if (wall.item!==null) return;
                     }
+                    refs = [{room:R.id, boundary:names[S.id]}, {room:S.id, boundary:names[R.id]}];
+                    wall.item = add_item({type: wall.type, orientation: "", width: round(wall.len), height: Math.min(h,room_height(S))}, refs);
+                    shared.push({a:R.id, b:S.id, axis:e.axis, lo:pc.lo, hi:pc.hi, item:wall.item, wall:wall});
+                } else {
+                    if (S) {
+                        wall.kind = 'unheated';
+                        wall.boundary = 'unheated';
+                    } else {
+                        wall.kind = 'external';
+                        wall.boundary = boundary_or(p.boundary, 'external');
+                    }
+                    wall.type = type_or_default(p.ext_type, d.wall_external);
+                    wall.orientation = orientation_name(e.nx, e.ny, plan.north);
+                    refs = [{room:R.id, boundary:wall.boundary}];
+                    wall.item = add_item({type: wall.type, orientation: wall.orientation, width: round(wall.len), height: h}, refs);
+                }
 
-                    // Windows and doors on this stretch of wall
-                    if (e.axis=='d') return;
-                    var n = e.axis=='h' ? e.ny : e.nx;
-                    plan.openings.forEach(function(op) {
-                        if (used_openings[op.id] || op.level!=R.level || op.axis!=e.axis) return;
-                        var c = e.axis=='h' ? op.y : op.x;
-                        var t = e.axis=='h' ? op.x : op.y;
-                        var s = (c-e.c)*n;
-                        if (s<-OPENING_TOL || s>wall.dist+OPENING_TOL) return;
-                        if (t<pc.lo-EPS || t>pc.hi+EPS) return;
-                        used_openings[op.id] = true;
-                        wall.openings.push(op.id);
-                        var fallback = op.kind=='door' ? d.door : d.window;
-                        add_item({
-                            type: type_or_default(op.type, fallback),
-                            orientation: wall.orientation,
-                            width: 1*op.width,
-                            height: 1*op.height
-                        }, refs, wall.item);
-                    });
+                // Windows and doors on this stretch of wall
+                if (e.axis=='d') return;
+                var n = e.axis=='h' ? e.ny : e.nx;
+                plan.openings.forEach(function(op) {
+                    if (used_openings[op.id] || op.level!=R.level || op.axis!=e.axis) return;
+                    var c = e.axis=='h' ? op.y : op.x;
+                    var t = e.axis=='h' ? op.x : op.y;
+                    var s = (c-e.c)*n;
+                    if (s<-OPENING_TOL || s>wall.dist+OPENING_TOL) return;
+                    if (t<pc.lo-EPS || t>pc.hi+EPS) return;
+                    used_openings[op.id] = true;
+                    wall.openings.push(op.id);
+                    var fallback = op.kind=='door' ? d.door : d.window;
+                    add_item({
+                        type: type_or_default(op.type, fallback),
+                        orientation: wall.orientation,
+                        width: 1*op.width,
+                        height: 1*op.height
+                    }, refs, wall.item);
                 });
             });
         });
+
+        var bands_by_level = {};
+        plan.levels.forEach(function(l){ bands_by_level[l.id] = []; });
+        walls.forEach(function(w){ if (w.band) bands_by_level[w.level].push(w.band); });
+        function polys(rooms) { return rooms.map(function(S){ return S.points; }); }
 
         // ------------------------------------------------------------------
         // Floors and ceilings
@@ -489,6 +612,8 @@ var floorplan_model = (function () {
                         [{room:R.id, boundary:'unheated'}]);
                 }
             });
+            // floor that sits on top of a wall below loses heat into the wall, not to outside
+            if (li>0) covered += area_over_walls(R.points, polys(below), bands_by_level[plan.levels[li-1].id]);
             var rem = A-covered;
             if (rem>0.01) {
                 if (li==0) {
@@ -512,6 +637,7 @@ var floorplan_model = (function () {
                         [{room:R.id, boundary:'unheated'}]);
                 }
             });
+            if (above.length) covered += area_over_walls(R.points, polys(above), bands_by_level[plan.levels[li+1].id]);
             rem = A-covered;
             if (rem>0.01) {
                 add_item({type: type_or_default(ceiling.type, d.roof), orientation: "", area: round(rem)},
@@ -606,6 +732,7 @@ var floorplan_model = (function () {
             north: 0,
             grid: 0.1,
             wall_gap: 0.35,
+            wall_thickness: { external: 0.3, party: 0.2 },
             levels: [{ id: "L1", name: "Ground floor", height: 2.4 }],
             rooms: [],
             openings: [],
@@ -637,18 +764,54 @@ var floorplan_model = (function () {
 
     function rect(x1,y1,x2,y2) { return [[x1,y1],[x2,y1],[x2,y2],[x1,y2]]; }
 
-    // A two storey semi detached house with an L shaped hall and attached garage
+    // The stone mid terrace from the main heatlossjs example, measured from the plan at
+    // https://trystanlea.org.uk/energyassessment. Rooms are internal dimensions, with
+    // 550mm stone walls, a thicker kitchen gable and the old back wall between the
+    // kitchen extension and the living room.
     function example_plan() {
         var plan = default_plan();
-        plan.project_name = "example semi";
+        plan.project_name = "midterrace";
+        plan.degreedays = 1750;
+        plan.heating_MWT = 35.3;
+        plan.heatpump_flow_rate = 12;
+        plan.heatpump_capacity = 5;
+        plan.T = { external: -1.4, ground: 10.6, unheated: 18, neighbour: 18 };
+        plan.element_type = {
+            "Floor:Ground": { uvalue: 0.9 },
+            "Floor:InsulatedGround": { uvalue: 0.38 },
+            "Floor:First": { uvalue: 1.7 },
+            "Floor:Loft": { uvalue: 0.18 },
+            "Wall:External": { uvalue: 1.5 },
+            "Wall:Internal": { uvalue: 2 },
+            "Wall:Party": { uvalue: 1.5 },
+            "Glazing:Double": { uvalue: 2.8 },
+            "Wall:InternalOpenDoor": { uvalue: 35 }
+        };
+        plan.defaults = {
+            wall_external: "Wall:External",
+            wall_internal: "Wall:Internal",
+            wall_party: "Wall:Party",
+            window: "Glazing:Double",
+            door: "Glazing:Double",
+            floor_ground: "Floor:Ground",
+            floor_intermediate: "Floor:First",
+            floor_exposed: "Floor:First",
+            roof: "Floor:Loft"
+        };
+        plan.default_ach = 0.6;
+        plan.grid = 0.01;
+        plan.wall_gap = 0.6;
+        plan.wall_thickness = { external: 0.55, party: 0.34 };
         plan.levels = [
             { id: "L1", name: "Ground floor", height: 2.4 },
-            { id: "L2", name: "First floor", height: 2.4 }
+            { id: "L2", name: "First floor", height: 2.42 }
         ];
         plan.next_id = 3;
 
         function room(level, name, pts, extra) {
             var r = new_room(plan, level, pts, name);
+            r.temperature = 19;
+            r.temp_auto = false;
             for (var z in extra) r[z] = extra[z];
             return r;
         }
@@ -656,39 +819,51 @@ var floorplan_model = (function () {
             plan.openings.push({ id: "o"+(plan.next_id++), level: level, kind: kind, x: x, y: y, axis: axis,
                 width: width, height: height, type: null });
         }
-
-        room("L1", "Kitchen", rect(0,0,4.2,3.6), {radiators:[{name:"Double panel 1000x600", heat50k:1790}]});
-        room("L1", "Dining", rect(4.2,0,8.4,3.6), {radiators:[{name:"Double panel 1200x600", heat50k:2146}]});
-        room("L1", "Living room", rect(0,3.6,5.0,7.2), {radiators:[{name:"Double panel 1400x600", heat50k:2504}]});
-        room("L1", "Hall", [[5,3.6],[6.6,3.6],[6.6,4.8],[8.4,4.8],[8.4,7.2],[5,7.2]], {radiators:[{name:"Single panel 800x600", heat50k:700}]});
-        room("L1", "WC", rect(6.6,3.6,8.4,4.8));
-        room("L1", "Garage", rect(8.4,0,11.4,7.2), {heated:false, name:"Garage"});
-
-        room("L2", "Bedroom 1", rect(0,0,4.2,3.6), {radiators:[{name:"Double panel 1000x600", heat50k:1790}]});
-        room("L2", "Bedroom 2", rect(4.2,0,8.4,3.6), {radiators:[{name:"Double panel 1000x600", heat50k:1790}]});
-        room("L2", "Bathroom", rect(0,3.6,3.0,7.2), {radiators:[{name:"Towel rail 1200x500", heat50k:550}]});
-        room("L2", "Landing", rect(3.0,3.6,5.4,7.2));
-        room("L2", "Bedroom 3", rect(5.4,3.6,8.4,7.2), {radiators:[{name:"Single panel 1000x600", heat50k:900}]});
-
-        // West side is the party wall with the neighbouring semi
-        plan.rooms.forEach(function(r) {
+        // Set wall properties on the edges of a room that lie on a given line
+        function walls_on(r, axis, c, props) {
             edges(r.points).forEach(function(e) {
-                if (e.axis=='v' && Math.abs(e.c)<EPS) {
-                    r.edges[e.i] = { boundary: "neighbour", ext_type: "Wall:Party" };
-                }
+                if (e.axis==axis && Math.abs(e.c-c)<EPS) r.edges[e.i] = clone(props);
             });
-        });
+        }
+        function rad(name, heat50k) { return { name: name, heat50k: heat50k }; }
 
-        opening("L1","window", 2.1,0,'h', 1.2,1.0);
-        opening("L1","door",   3.6,0,'h', 0.9,2.0);
-        opening("L1","window", 6.3,0,'h', 1.8,1.2);
-        opening("L1","window", 2.5,7.2,'h', 2.0,1.4);
-        opening("L1","door",   6.7,7.2,'h', 1.0,2.0);
-        opening("L2","window", 2.1,0,'h', 1.2,1.2);
-        opening("L2","window", 6.3,0,'h', 1.2,1.2);
-        opening("L2","window", 1.5,7.2,'h', 0.6,0.9);
-        opening("L2","window", 4.2,7.2,'h', 0.8,1.0);
-        opening("L2","window", 6.9,7.2,'h', 1.2,1.2);
+        var party = { boundary: "neighbour", ext_type: "Wall:Party" };
+
+        var living = room("L1", "Living room", [[0.33,4.37],[3.69,4.37],[3.69,11.18],[2.92,11.18],[2.92,12.03],[1.16,12.03],[1.16,11.18],[0.33,11.18]], {
+            temperature: 20, floor: { type: "Floor:InsulatedGround" },
+            radiators: [rad("Double Panel Convector 1200x600",2146), rad("Double Panel Convector 1200x600",2146), rad("Double Panel Convector 1200x600",2146)]
+        });
+        var hall = room("L1", "Hall", rect(3.80,4.37,4.80,12.03), { height: 2.45, radiators: [rad("Double Panel Convector 1200x600",2146)] });
+        var kitchen = room("L1", "Kitchen", rect(2.40,0.80,4.80,3.82), { height: 2.45 });
+
+        var bed1 = room("L2", "Bed 1", rect(0.33,4.37,3.27,7.87), { radiators: [rad("Double Panel Convector 1200x500",1834)] });
+        var bed2 = room("L2", "Bed 2", rect(0.33,7.99,2.93,11.16), { radiators: [rad("Double Panel Convector 1200x500",1834)] });
+        var landing = room("L2", "Landing", [[3.37,4.37],[4.80,4.37],[4.80,8.79],[3.01,8.79],[3.01,7.99],[3.37,7.99]]);
+        var study = room("L2", "Study", rect(3.01,8.92,4.80,11.16), { radiators: [rad("Double Panel Convector 1000x400",1273)] });
+        var bathroom = room("L2", "Bathroom", rect(2.40,0.53,4.80,3.82), { radiators: [rad("Double Panel Convector 800x600",1430)] });
+
+        // Party walls with the houses either side
+        [living, bed1, bed2].forEach(function(r){ walls_on(r, 'v', 0.33, party); });
+        [hall, kitchen, landing, study, bathroom].forEach(function(r){ walls_on(r, 'v', 4.80, party); });
+        // Thicker stone gable at the end of the kitchen and the thinner walls of the bay
+        walls_on(kitchen, 'h', 0.80, { thickness: 0.80 });
+        walls_on(living, 'v', 1.16, { thickness: 0.29 });
+        walls_on(living, 'v', 2.92, { thickness: 0.29 });
+        walls_on(living, 'h', 12.03, { thickness: 0.29 });
+        walls_on(hall, 'h', 12.03, { thickness: 0.29 });
+        // Wide openings through the old back wall, modelled as in the table example
+        walls_on(living, 'h', 4.37, { int_type: "Wall:InternalOpenDoor" });
+        walls_on(landing, 'h', 4.37, { int_type: "Wall:InternalOpenDoor" });
+
+        opening("L1","window", 2.04,12.03,'h', 1.76,1.63);  // W1 bay
+        opening("L1","window", 1.41,4.37,'h',  1.06,1.5);   // W2
+        opening("L1","window", 2.40,1.84,'v',  0.91,1.3);   // W3
+        opening("L1","door",   2.40,3.37,'v',  0.89,1.9);   // D1
+        opening("L1","door",   4.30,12.03,'h', 0.8,1.9);    // D2
+        opening("L2","window", 4.40,11.16,'h', 0.79,1.4);   // W4
+        opening("L2","window", 2.01,11.16,'h', 0.9,1.35);   // W5
+        opening("L2","window", 1.38,4.37,'h',  0.9,1.3);    // W6
+        opening("L2","window", 2.82,0.53,'h',  0.84,0.89);  // W7
 
         return plan;
     }
@@ -727,6 +902,7 @@ var floorplan_model = (function () {
         clean_polygon: clean_polygon,
         union: union,
         orientation_name: orientation_name,
+        edge_thickness: edge_thickness,
         remap_edge_props: remap_edge_props,
         openings_on_room: openings_on_room,
         guess_temperature: guess_temperature,

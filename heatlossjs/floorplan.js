@@ -140,6 +140,20 @@ var app = new Vue({
             return list.filter(function(w){ return w.kind.indexOf('unheated_')==0; })
                 .concat(list.filter(function(w){ return w.kind.indexOf('unheated_')!=0; }));
         },
+        // Wall footprints, shared walls appear once from each side which does no harm
+        level_bands: function() {
+            return this.level_walls.filter(function(w){ return w.band; });
+        },
+        ghost_bands: function() {
+            if (this.level_index<1) return [];
+            var id = this.plan.levels[this.level_index-1].id;
+            return this.analysis.walls.filter(function(w){ return w.level==id && w.band; });
+        },
+        level_opening_shapes: function() {
+            var self = this;
+            return this.level_openings.map(function(op){ return { op: op, rect: self.opening_rect(op) }; })
+                .filter(function(o){ return o.rect; });
+        },
         selected_room: function() {
             if (!this.sel || this.sel.kind!='room') return null;
             return this.room_by_id(this.sel.id);
@@ -299,6 +313,7 @@ var app = new Vue({
             }
             var pts = [];
             rooms.forEach(function(r){ pts = pts.concat(r.points); });
+            this.level_bands.forEach(function(w){ pts.push([w.band.x1,w.band.y1],[w.band.x2,w.band.y2]); });
             var b = M.bbox(pts);
             var w = Math.max(b.x2-b.x1, 1), h = Math.max(b.y2-b.y1, 1);
             var s = Math.min((this.size.w-120)/w, (this.size.h-170)/h);
@@ -411,6 +426,30 @@ var app = new Vue({
             if (w.kind=='external') return w.boundary=='external' ? 'external' : 'boundary';
             return w.kind;
         },
+        rect_points: function(b) {
+            return this.poly([[b.x1,b.y1],[b.x2,b.y1],[b.x2,b.y2],[b.x1,b.y2]]);
+        },
+        // The wall a window or door sits in, preferring the heated side
+        opening_host: function(op) {
+            var best = null;
+            this.level_walls.forEach(function(w) {
+                if (w.axis!=op.axis || !w.band) return;
+                var c = w.axis=='h' ? op.y : op.x, t = w.axis=='h' ? op.x : op.y;
+                var s = (c-w.c)*(w.axis=='h' ? w.ny : w.nx);
+                if (s<-0.03 || s>w.dist+0.03 || t<w.lo-0.001 || t>w.hi+0.001) return;
+                if (!best || (best.item===null && w.item!==null)) best = w;
+            });
+            return best;
+        },
+        // Window or door drawn through the full thickness of its wall
+        opening_rect: function(op) {
+            var w = this.opening_host(op);
+            if (!w) return null;
+            var h = op.width/2, n = w.axis=='h' ? w.ny : w.nx;
+            var a = Math.min(w.c, w.c+n*w.thick), b = Math.max(w.c, w.c+n*w.thick);
+            if (op.axis=='h') return { x1: op.x-h, y1: a, x2: op.x+h, y2: b };
+            return { x1: a, y1: op.y-h, x2: b, y2: op.y+h };
+        },
         opening_line: function(op) {
             var h = op.width/2;
             if (op.axis=='h') return { x1: this.sx(op.x-h), y1: this.sy(op.y), x2: this.sx(op.x+h), y2: this.sy(op.y) };
@@ -421,6 +460,7 @@ var app = new Vue({
             if (w.kind=='internal') return "Internal wall";
             if (w.kind=='unheated') return "Wall to unheated space";
             if (w.kind=='external') return w.boundary=='external' ? "External wall" : "Wall to "+w.boundary;
+            if (w.kind=='junction') return "Wall junction";
             return "Wall of unheated space";
         },
         element_heat: function(room_id, item) {
@@ -544,7 +584,8 @@ var app = new Vue({
                 var l = this.opening_line(ops[i]);
                 var s = this.view.scale;
                 var d = dist_to_segment(p.px, p.py, l.x1, l.y1, l.x2, l.y2);
-                if (d<6) return { kind:'opening', opening:ops[i] };
+                var b = this.opening_rect(ops[i]);
+                if (d<6 || (b && p.x>b.x1 && p.x<b.x2 && p.y>b.y1 && p.y<b.y2)) return { kind:'opening', opening:ops[i] };
             }
             var edge_hits = [];
             this.level_rooms.forEach(function(room) {
@@ -565,6 +606,12 @@ var app = new Vue({
             if (inside.length) {
                 inside.sort(function(a,b){ return M.area(a.points)-M.area(b.points); });
                 return { kind:'room', room:inside[0] };
+            }
+            var bands = this.level_bands;
+            for (var i=bands.length-1; i>=0; i--) {
+                var w = bands[i], b = w.band;
+                if (w.axis=='d' || p.x<b.x1 || p.x>b.x2 || p.y<b.y1 || p.y>b.y2) continue;
+                return { kind:'edge', room:this.room_by_id(w.room), edge:w.edge, axis:w.axis, wall:w };
             }
             return null;
         },
@@ -609,6 +656,35 @@ var app = new Vue({
                         result.push(item);
                         queue.push(item);
                     });
+                });
+            }
+            return result;
+        },
+
+        // Room edges on both faces of a shared wall, following the wall on to any
+        // other rooms it is shared with
+        wall_faces: function(wall) {
+            var self = this, keys = {}, result = [];
+            function add(room_id, edge) {
+                var k = room_id+":"+edge;
+                if (keys[k]) return false;
+                keys[k] = true;
+                self.linked_edges(self.room_by_id(room_id), edge).forEach(function(l) {
+                    keys[l.room.id+":"+l.edge] = true;
+                    if (!result.some(function(x){ return x.room===l.room && x.edge==l.edge; })) result.push(l);
+                });
+                return true;
+            }
+            add(wall.room, wall.edge);
+            add(wall.other, wall.other_edge);
+            var walls = this.level_walls.filter(function(w){ return w.other; });
+            var changed = true;
+            while (changed) {
+                changed = false;
+                walls.forEach(function(w) {
+                    var a = keys[w.room+":"+w.edge], b = keys[w.other+":"+w.other_edge];
+                    if (a && !b) changed = add(w.other, w.other_edge) || changed;
+                    if (b && !a) changed = add(w.room, w.edge) || changed;
                 });
             }
             return result;
@@ -686,6 +762,8 @@ var app = new Vue({
                 this.drag = { type:'opening', op:h.opening, start:p, moved:false };
             } else if (h.kind=='edge') {
                 var linked = e.altKey ? [{ room:h.room, edge:h.edge, e:M.edges(h.room.points)[h.edge] }] : this.linked_edges(h.room, h.edge);
+                // Grabbing the middle of a wall between rooms moves every room face along it
+                if (h.wall && h.wall.other && !e.altKey) linked = this.wall_faces(h.wall);
                 var rooms = [];
                 linked.forEach(function(l){ if (rooms.indexOf(l.room)==-1) rooms.push(l.room); });
                 this.drag = this.begin_shape_drag('edge', rooms, p, { room:h.room, edge:h.edge, axis:h.axis, linked:linked });
@@ -845,15 +923,17 @@ var app = new Vue({
             });
         },
 
+        // Move the dragged edge to c, and the edges linked to it by the same amount
         apply_edge_coordinate: function(d, c) {
-            var self = this;
+            var delta = c - M.edges(d.origs[d.room.id])[d.edge].c;
             d.linked.forEach(function(l) {
                 var pts = (l.room.id in d.origs) ? M.clone(l.room.points) : null;
                 if (!pts) return;
                 var n = pts.length, i = l.edge, j = (l.edge+1)%n;
                 var k = d.axis=='h' ? 1 : 0;
-                pts[i][k] = c;
-                pts[j][k] = c;
+                var v = M.round(l.e.c + delta);
+                pts[i][k] = v;
+                pts[j][k] = v;
                 l.room.points = pts;
             });
             this.update_dragged_openings(d);
@@ -1130,6 +1210,20 @@ var app = new Vue({
             } else {
                 this.set_edge_prop(R, w.edge, { ext_type: type });
             }
+            this.commit();
+        },
+        wall_thickness_override: function(w) {
+            var p = (this.room_by_id(w.room).edges||{})[w.edge] || {};
+            return typeof p.thickness=='number' ? p.thickness : "";
+        },
+        wall_default_thickness: function(w) {
+            var p = M.clone((this.room_by_id(w.room).edges||{})[w.edge] || {});
+            delete p.thickness;
+            return M.edge_thickness(this.plan, p);
+        },
+        set_wall_thickness: function(w, value) {
+            var v = parseFloat(String(value).replace(",", "."));
+            this.set_edge_prop(this.room_by_id(w.room), w.edge, { thickness: isNaN(v) || v<0 ? null : v });
             this.commit();
         },
         set_wall_boundary: function(w, boundary) {

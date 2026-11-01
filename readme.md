@@ -24,6 +24,7 @@ Define your building in json object input definition (loaded in the first line a
 Open [floorplan.php](floorplan.php) to draw the building instead of typing in each element:
 
 - Drag to draw rooms on a grid, rooms that touch (or are within the wall gap) share a wall automatically.
+- Rooms are drawn to their inside dimensions and walls are drawn with their thickness: the gap between two rooms is the internal wall, external and party walls are drawn outwards at a default thickness that can be changed per wall. Floor and ceiling area that sits over or under a wall on the next storey is not counted as exposed floor or roof.
 - Click on walls to add windows and doors, click a wall to mark it as a party wall or change its construction.
 - Add floors, the floor below is shown faintly to trace over. Floors and ceilings between rooms are worked out from the overlap, with ground below the bottom floor and roof above any area not covered.
 - Wall orientations come from the north arrow.
