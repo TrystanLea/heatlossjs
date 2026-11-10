@@ -57,7 +57,13 @@ function load_app() {
                 calculate();
             },
             change_element_type_name: function(e,old_name) {
-                var new_name = e.target.value;
+                var new_name = e.target.value.trim();
+                if (new_name==old_name) return;
+                if (new_name=="" || config.element_type[new_name]!=undefined) {
+                    alert(new_name=="" ? "Element type name can't be empty" : "An element type called '"+new_name+"' already exists, please choose a different name");
+                    e.target.value = old_name;
+                    return;
+                }
                 // Create new element with new name
                 config.element_type[new_name] = config.element_type[old_name]
                 // Update all elements with new name
@@ -82,25 +88,55 @@ function load_app() {
                 calculate(); 
             },
             change_room_name: function(e,old_room_name) {
-                var new_room_name = e.target.value;
-                config.rooms[new_room_name] = JSON.parse(JSON.stringify(config.rooms[old_room_name]))
-                delete config.rooms[old_room_name]
-                calculate()      
+                var new_room_name = e.target.value.trim();
+                if (new_room_name==old_room_name) return;
+
+                // Don't allow an empty name or one that would replace another room or boundary
+                var error = false;
+                if (new_room_name=="") error = "Room name can't be empty";
+                else if (config.rooms[new_room_name]!=undefined) error = "A room called '"+new_room_name+"' already exists, please choose a different name";
+                else if (config.T[new_room_name]!=undefined) error = "'"+new_room_name+"' is used as a boundary name, please choose a different name";
+                if (error) {
+                    alert(error);
+                    e.target.value = old_room_name;
+                    return;
+                }
+
+                // Rebuild the rooms object to keep the room in the same position
+                var rooms = {};
+                for (var z in config.rooms) {
+                    if (z==old_room_name) rooms[new_room_name] = config.rooms[z];
+                    else rooms[z] = config.rooms[z];
+                }
+
+                // Point elements in other rooms that border this room at the new name
+                for (var z in rooms) {
+                    for (var i in rooms[z].elements) {
+                        var element = rooms[z].elements[i];
+                        if (element!=false && element.boundary==old_room_name) element.boundary = new_room_name;
+                    }
+                }
+
+                config.rooms = JSON.parse(JSON.stringify(rooms));
+                calculate()
             },
             toggleSection: function (roomName) {
                 $(".room-elements[name="+roomName+"]").slideToggle(); 
             },
             add_element: function(roomName) {
+                // Find the last element in this room that has not been deleted
+                // (deleted elements are left in the list as false)
                 var length = config.rooms[roomName].elements.length;
-                if (length>0) {
-                    // Find closest element that is not false
-                    var id = false;
-                    for (var i=length-1; i>=0; i--) {
-                        if (config.rooms[roomName].elements[i]!=false) {
-                            id = config.rooms[roomName].elements[i].id;
-                            break;
-                        }
+                var id = false;
+                for (var i=length-1; i>=0; i--) {
+                    if (config.rooms[roomName].elements[i]!=false) {
+                        id = config.rooms[roomName].elements[i].id;
+                        break;
                     }
+                }
+
+                if (id!==false && config.elements[id]) {
+                    // Copy the last element
                     config.elements.push({
                         type: config.elements[id].type,
                         orientation: config.elements[id].orientation,
@@ -108,11 +144,12 @@ function load_app() {
                         height: config.elements[id].height
                     });
                 } else {
+                    // Empty room: start from the first element type
                     config.elements.push({
                         type:Object.keys(config.element_type)[0],
-                        orientation:"", 
-                        width:config.rooms[roomName].width,
-                        height: config.rooms[roomName].height
+                        orientation:"",
+                        width: 0,
+                        height: config.rooms[roomName].height || 0
                     });
                 }
                 
@@ -130,11 +167,13 @@ function load_app() {
                 
                 // Remove the base element
                 config.elements[e.id] = false;
-                // Remove this element
-                config.rooms[roomName].elements[elementIndex] = false;
-                // Remove the linked room entry
-                if (e.link!=undefined) {
-                    config.rooms[e.boundary].elements[e.link] = false;
+                // Remove this element and the entry for it in the room on the other side.
+                // Match on id rather than link as not all files have link set.
+                for (var z in config.rooms) {
+                    var elements = config.rooms[z].elements;
+                    for (var i in elements) {
+                        if (elements[i]!=false && elements[i].id==e.id) elements[i] = false;
+                    }
                 }
                          
                 calculate();
@@ -147,14 +186,14 @@ function load_app() {
                 e.boundary = event.target.value
                 
                 // Remove linked element from original boundary
-                if (o.boundary != "external" && o.boundary != "unheated" && o.boundary != "ground") {  
+                if (config.rooms[o.boundary]!=undefined) {
                     if (e.link!=undefined) {
                         config.rooms[o.boundary].elements[e.link] = false;
                     }
                 }
 
                 // Only link if another room
-                if (e.boundary != "external" && e.boundary != "unheated" && e.boundary != "ground") {                
+                if (config.rooms[e.boundary]!=undefined) {
                     // Add link 
                     config.rooms[e.boundary].elements.push({id: e.id, link: elementIndex, boundary: roomName});
                     e.link = config.rooms[e.boundary].elements.length - 1;
