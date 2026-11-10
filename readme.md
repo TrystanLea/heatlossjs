@@ -21,7 +21,7 @@ Define your building in json object input definition (loaded in the first line a
 
 ### Floor plan builder
 
-Open [floorplan.php](floorplan.php) to draw the building instead of typing in each element:
+Open [floorplan.php](floorplan.php) to draw the building instead of typing in each element. The floor plan code lives in [floorplan/](floorplan/) and uses the shared calculation in heatlossjs/calc.js.
 
 - Drag to draw rooms on a grid, rooms that touch (or are within the wall gap) share a wall automatically.
 - Rooms are drawn to their inside dimensions and walls are drawn with their thickness: the gap between two rooms is the internal wall, external and party walls are drawn outwards at a default thickness that can be changed per wall. Floor and ceiling area that sits over or under a wall on the next storey is not counted as exposed floor or roof.

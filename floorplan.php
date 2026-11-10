@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>HeatLoss.js floor plan</title>
-<link rel="stylesheet" type="text/css" href="heatlossjs/floorplan.css?v=<?php echo $v; ?>" />
+<link rel="stylesheet" type="text/css" href="floorplan/floorplan.css?v=<?php echo $v; ?>" />
 <script src="https://cdn.jsdelivr.net/npm/vue@2.7.16/dist/vue.min.js"></script>
 </head>
 <body>
@@ -654,7 +654,7 @@
 
 <script type="text/javascript" src="heatlossjs/ecodan.js?v=<?php echo $v; ?>"></script>
 <script type="text/javascript" src="heatlossjs/calc.js?v=<?php echo $v; ?>"></script>
-<script type="text/javascript" src="heatlossjs/floorplan_model.js?v=<?php echo $v; ?>"></script>
-<script type="text/javascript" src="heatlossjs/floorplan.js?v=<?php echo $v; ?>"></script>
+<script type="text/javascript" src="floorplan/floorplan_model.js?v=<?php echo $v; ?>"></script>
+<script type="text/javascript" src="floorplan/floorplan.js?v=<?php echo $v; ?>"></script>
 </body>
 </html>
